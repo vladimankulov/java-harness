@@ -12,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -29,7 +28,7 @@ class HudTest {
         Agent agent = Mockito.mock(Agent.class);
         Mockito.when(agent.conversation()).thenReturn(conversation);
 
-        hud = new Hud(new MachineViewPrinter(new PrintStream(buffer, true, StandardCharsets.UTF_8)), agent, List.of());
+        hud = new Hud(new MachineViewPrinter(new PrintStream(buffer, true, StandardCharsets.UTF_8)), agent);
     }
 
     private String output() {
@@ -41,7 +40,7 @@ class HudTest {
         conversation.addUserMessage("почини тест");
 
         hud.onTurnStarted(new AgentEvent.TurnStarted("почини тест"));
-        hud.onTurnFinished(new AgentEvent.TurnFinished(Duration.ofMillis(42), 1));
+        hud.onTurnFinished(new AgentEvent.TurnFinished(Duration.ofMillis(42)));
 
         assertThat(output()).contains("ПОЛУЧЕН ПРИКАЗ").contains("почини тест").contains("42 мс");
     }
