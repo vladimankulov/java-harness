@@ -1,6 +1,7 @@
 package com.harness.agent;
 
 import com.harness.agent.event.AgentEvent;
+import org.jspecify.annotations.Nullable;
 import com.harness.model.Conversation;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
@@ -20,9 +21,14 @@ public class Agent {
             """;
     private final ApplicationEventPublisher publisher;
 
-    private Conversation conversation = new Conversation(AGENT_SYSTEM);
+    private final Conversation conversation = new Conversation(AGENT_SYSTEM);
 
     private final ChatModel chatModel;
+
+    @Nullable
+    public String chatModel() {
+        return chatModel.getOptions().getModel();
+    }
 
     public Agent(ChatModel chatModel, ApplicationEventPublisher publisher) {
         this.chatModel = chatModel;
@@ -30,7 +36,7 @@ public class Agent {
     }
 
     public String run(String userMessage) {
-        Instant start = Instant.now();
+        Instant startTime = Instant.now();
         conversation.addUserMessage(userMessage);
         publisher.publishEvent(new AgentEvent.TurnStarted(userMessage));
         AssistantMessage assistantMessage = chatModel.call(new Prompt(conversation.toPromptMessages())).getResult().getOutput();
@@ -38,7 +44,7 @@ public class Agent {
         String assistantText = assistantMessage.getText();
 
         publisher.publishEvent(new AgentEvent.AgentSpoke(assistantText));
-        publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(start, Instant.now())));
+        publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now())));
         return assistantText;
     }
 }
