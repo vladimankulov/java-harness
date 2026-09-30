@@ -10,7 +10,7 @@ import java.util.List;
 
 public class Conversation {
     private final String systemPrompt;
-    public List<Message> messages = new ArrayList<>();
+    private final List<Message> messages = new ArrayList<>();
 
     public Conversation(String systemPrompt) {
         this.systemPrompt = systemPrompt;
