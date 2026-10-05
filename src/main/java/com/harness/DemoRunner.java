@@ -23,7 +23,6 @@ public class DemoRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        System.out.println(agent.run("Кто ты? Ответь одним предложением."));
-        System.out.println(agent.run("Повтори что ты сказал"));
+        System.out.println(agent.run("какая версия Java указана в проекте. Ответь одним предложением"));
     }
 }
