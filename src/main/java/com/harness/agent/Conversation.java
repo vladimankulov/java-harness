@@ -1,9 +1,6 @@
 package com.harness.agent;
 
-import org.springframework.ai.chat.messages.AssistantMessage;
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.messages.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +28,9 @@ public class Conversation {
         return prompt;
     }
 
+    public void addToolResponses(ToolResponseMessage toolResponseMessage) {
+        messages.add(toolResponseMessage);
+    }
 }
 
 
