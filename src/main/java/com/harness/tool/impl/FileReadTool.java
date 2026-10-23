@@ -68,7 +68,7 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
 
     @Override
     public String renderToolUseMessage(Input input) {
-        return input.filePath();
+        return tag() + " " +  input.filePath();
     }
 
     @Override

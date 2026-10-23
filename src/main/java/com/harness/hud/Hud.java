@@ -76,8 +76,7 @@ public class Hud {
 
     @EventListener
     public void onToolCallStarted(AgentEvent.ToolCallStarted event) {
-        machinePrinter.showToolCallStarted(
-                event.description().isBlank() ? event.toolName() : event.description());
+        machinePrinter.showToolCallStarted(event.description());
     }
 
     @EventListener
