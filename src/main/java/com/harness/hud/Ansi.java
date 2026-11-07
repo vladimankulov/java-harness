@@ -1,10 +1,5 @@
 package com.harness.hud;
 
-/**
- * Цвета красного интерфейса T-800.
- *
- * <p>Всё, что относится к внешнему виду, живёт в пакете {@code hud} и только здесь.
- */
 final class Ansi {
 
     static final String RESET = "[0m";
@@ -13,7 +8,8 @@ final class Ansi {
     static final String DIM_RED = "[2;31m";
     static final String BOLD = "[1m";
 
-    private Ansi() {}
+    private Ansi() {
+    }
 
     static String red(String text) {
         return RED + text + RESET;

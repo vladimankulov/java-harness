@@ -1,8 +1,8 @@
 package com.harness.agent;
 
 import com.harness.agent.event.AgentEvent;
-import org.jspecify.annotations.Nullable;
 import com.harness.model.Conversation;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -25,14 +25,19 @@ public class Agent {
 
     private final ChatModel chatModel;
 
+    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher) {
+        this.chatModel = chatModel;
+        this.publisher = publisher;
+    }
+
+
     @Nullable
     public String chatModel() {
         return chatModel.getOptions().getModel();
     }
 
-    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher) {
-        this.chatModel = chatModel;
-        this.publisher = publisher;
+    public Conversation conversation() {
+        return this.conversation;
     }
 
     public String run(String userMessage) {

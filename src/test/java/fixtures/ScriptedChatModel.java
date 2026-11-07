@@ -1,5 +1,6 @@
 package fixtures;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -30,7 +31,7 @@ public class ScriptedChatModel implements ChatModel {
     }
 
     @Override
-    public ChatResponse call(Prompt prompt) {
+    public ChatResponse call(@NonNull Prompt prompt) {
         this.receivedPrompts.add(prompt);
         AssistantMessage next = this.script.poll();
         if (next == null) {

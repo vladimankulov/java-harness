@@ -1,5 +1,6 @@
 package com.harness.agent;
 
+import fixtures.RecordingEventPublisher;
 import fixtures.ScriptedChatModel;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
@@ -16,7 +17,8 @@ public class AgentTest {
     @Test
     void mustCallOnceAndReturnResponseFromModel() {
         String expectedResponseFromModel = "I'm Harness";
-        Agent agent = new Agent(ScriptedChatModel.replyingWith(expectedResponseFromModel));
+        RecordingEventPublisher publisher = new RecordingEventPublisher();
+        Agent agent = new Agent(ScriptedChatModel.replyingWith(expectedResponseFromModel), publisher);
 
         assertThat(agent.run("Who are you")).isEqualTo(expectedResponseFromModel);
     }
@@ -25,7 +27,7 @@ public class AgentTest {
     void mustReceiveSystemMessageAsFirstMessageInModel() {
         String expectedResponseFromModel = "I'm Harness";
         ScriptedChatModel model = ScriptedChatModel.replyingWith(expectedResponseFromModel);
-        Agent agent = new Agent(model);
+        Agent agent = new Agent(model, new RecordingEventPublisher());
 
         assertThat(agent.run("Who are you")).isEqualTo(expectedResponseFromModel);
 
@@ -38,7 +40,7 @@ public class AgentTest {
         String firstResponse = "I'm Harness";
         String secondResponse = "You're human";
         ScriptedChatModel model = ScriptedChatModel.replyingWith(firstResponse, secondResponse);
-        Agent agent = new Agent(model);
+        Agent agent = new Agent(model, new RecordingEventPublisher());
 
         String firstUserQuestion = "Who are you";
         String secondUserQuestion = "Who am I";

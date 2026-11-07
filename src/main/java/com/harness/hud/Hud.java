@@ -5,7 +5,6 @@ import com.harness.agent.event.AgentEvent;
 import com.harness.context.TokenEstimator;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
-import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -34,10 +33,10 @@ public class Hud {
     private List<BootLine> collectBootLines(int beanDefinitionCount) {
         List<BootLine> lines = new ArrayList<>();
         lines.add(BootLine.of(POWER_CELL, BootStatus.ONLINE,
-                "спринг контекст " + plural(beanDefinitionCount, "бин", "бина", "бинов"))) ;
-        lines.add(BootLine.of(NEUROPROCESSOR,BootStatus.ONLINE, agent.chatModel()));
+                "спринг контекст " + plural(beanDefinitionCount, "бин", "бина", "бинов")));
+        lines.add(BootLine.of(NEUROPROCESSOR, BootStatus.ONLINE, agent.chatModel()));
         lines.add(BootLine.of(MEMORY_BANK, BootStatus.ONLINE, agent.conversation().getClass().getSimpleName()));
-        lines.add(BootLine.of(DIAGNOSTIC_BUS,BootStatus.ONLINE,"Agent Events: "+AgentEvent.class.getPermittedSubclasses().length));
+        lines.add(BootLine.of(DIAGNOSTIC_BUS, BootStatus.ONLINE, "Agent Events: " + AgentEvent.class.getPermittedSubclasses().length));
         return lines;
 
     }
@@ -54,19 +53,5 @@ public class Hud {
     @EventListener
     public void onTurnFinished(AgentEvent.TurnFinished event) {
         machinePrinter.showTurnFinished(event.duration());
-    }
-
-    //    @EventListener
-    public void onAgentSpokeEvent(AgentEvent.AgentSpoke event) {
-        String assistantMessage = event.assistantMessage();
-        boolean containsRussian = java.util.regex.Pattern
-                .compile("[А-Яа-яЁё]")
-                .matcher(assistantMessage)
-                .find();
-
-        if (containsRussian) {
-            System.err.println("НЕ ГОВОРИ СО МНОЙ ПО РУССКИ");
-            throw new RuntimeException(assistantMessage);
-        }
     }
 }

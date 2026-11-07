@@ -1,8 +1,8 @@
 package com.harness.hud;
 
 import com.harness.agent.Agent;
-import com.harness.agent.Conversation;
 import com.harness.agent.event.AgentEvent;
+import com.harness.model.Conversation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -17,14 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class HudTest {
 
-    private ByteArrayOutputStream buffer;
-    private Conversation conversation;
     private Hud hud;
+    private Conversation conversation;
+    private ByteArrayOutputStream buffer;
 
-    /**
-     * HUD тестируется отдельно от агента: на вход — события, на выход — текст.
-     * История настоящая, агент — заглушка: монитору нужен только снимок разговора.
-     */
     @BeforeEach
     void setUp() {
         buffer = new ByteArrayOutputStream();
@@ -40,7 +36,7 @@ class HudTest {
     }
 
     @Test
-    void рисуетТелеметриюХодаНоНеОтветПользователю() {
+    void mustDrawTelemetryHudWithoutUserResponse() {
         conversation.addUserMessage("почини тест");
 
         hud.onTurnStarted(new AgentEvent.TurnStarted("почини тест"));
@@ -50,7 +46,7 @@ class HudTest {
     }
 
     @Test
-    void наКаждомПриказеПоказываетВесьУходящийКонтекст() {
+    void mustDrawContextOnEachTurn() {
         conversation.addUserMessage("первый");
         conversation.addAssistantMessage(new AssistantMessage("второй"));
         conversation.addUserMessage("третий");
