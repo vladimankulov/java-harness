@@ -12,13 +12,13 @@ services:
       # Модель не выгружается между ходами агента: иначе каждый ход
       # начинается с повторной загрузки весов в VRAM.
       - OLLAMA_KEEP_ALIVE=30m
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: 1
+#              capabilities: [ gpu ]
     healthcheck:
       test: [ "CMD", "ollama", "list" ]
       interval: 10s
@@ -38,7 +38,7 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
     entrypoint: /bin/sh
-    command: -c "ollama pull qwen3.5:4b"
+    command: -c "ollama pull qwen3.5:2b"
 
 networks:
   harness-net:

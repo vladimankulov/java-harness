@@ -4,6 +4,6 @@
  * их методов совпадают по контракту. Исключения помечаются {@code @Nullable} точечно.
  */
 @NullMarked
-package com.harness;
+package com.harness.agent.event;
 
 import org.jspecify.annotations.NullMarked;

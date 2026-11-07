@@ -2,6 +2,7 @@ package com.harness;
 
 import com.harness.agent.Agent;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Component;
  * <p>Урок 1: хотим просто поговорить с агентом. Пока не с чем: класса Agent нет.
  */
 @Component
+@Profile("!test")
 public class DemoRunner implements CommandLineRunner {
 
     private final Agent agent;
