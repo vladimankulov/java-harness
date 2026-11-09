@@ -71,7 +71,7 @@ public class Hud {
 
     @EventListener
     public void onTurnFinished(AgentEvent.TurnFinished event) {
-        machinePrinter.showTurnFinished(event.duration());
+        machinePrinter.showTurnFinished(event.duration(), event.iteration());
     }
 
     @EventListener
