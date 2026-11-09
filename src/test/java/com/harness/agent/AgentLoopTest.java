@@ -1,17 +1,20 @@
 package com.harness.agent;
 
-import static com.harness.agent.TestAgents.agent;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.tool.Tool;
-import com.harness.tool.ToolResult;
-import java.util.ArrayList;
-import java.util.List;
+import com.harness.tooling.Tool;
+import com.harness.model.tooling.ToolResult;
+import fixtures.RecordingEventPublisher;
+import fixtures.ScriptedChatModel;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static fixtures.TestAgents.agent;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Тесты агентского цикла — сердце урока 3.
@@ -25,9 +28,12 @@ class AgentLoopTest {
 
     private final RecordingEventPublisher publisher = new RecordingEventPublisher();
 
-    /** Инструмент-шпион: записывает, с чем его позвали. */
+    /**
+     * Инструмент-шпион: записывает, с чем его позвали.
+     */
     static class SpyTool implements Tool<SpyTool.Input> {
-        record Input(String value) {}
+        record Input(String value) {
+        }
 
         final List<String> calls = new ArrayList<>();
         private final ToolResult answer;
@@ -52,7 +58,7 @@ class AgentLoopTest {
         }
 
         @Override
-        public String renderToolUseMessage(Input input) {
+        public String renderToolUsage(Input input) {
             return input.value();
         }
 
@@ -154,6 +160,6 @@ class AgentLoopTest {
 
         assertThat(answer).isEqualTo("Извини.");
         assertThat(toolMessageOf(model.lastPrompt().getInstructions()).getResponses().getFirst().responseData())
-                .contains("нет инструмента");
+                .contains("Tool by name: {} not found");
     }
 }

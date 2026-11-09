@@ -1,9 +1,11 @@
 package com.harness.agent;
 
 import com.harness.agent.event.AgentEvent;
-import com.harness.tool.SpringAiToolAdapter;
-import com.harness.tool.ToolRegistry;
-import com.harness.tool.ToolResult;
+import com.harness.agent.property.AgentProperty;
+import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
+import com.harness.model.Conversation;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.ToolRegistry;
 import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
@@ -34,9 +36,8 @@ public class Agent {
 
     private final Conversation conversation = new Conversation(SYSTEM_PROMPT);
     private final ToolRegistry toolRegistry;
-    private final SpringAiToolAdapter springAiToolAdapter;
-    private final AgentProperties agentProperties;
-
+    private final AgentProperty agentProperties;
+    private final SpringAiToolCallbackAdapter springAiToolAdapter;
 
 
     public Conversation conversation() {
@@ -51,7 +52,7 @@ public class Agent {
         return chatModel.getOptions().getModel();
     }
 
-    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher, ToolRegistry toolRegistry, SpringAiToolAdapter springAiToolAdapter, AgentProperties agentProperties) {
+    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher, ToolRegistry toolRegistry, SpringAiToolCallbackAdapter springAiToolAdapter, AgentProperty agentProperties) {
         this.chatModel = chatModel;
         this.publisher = publisher;
         this.toolRegistry = toolRegistry;
@@ -67,8 +68,8 @@ public class Agent {
             AssistantMessage assistantMessage = askModel();
             conversation.addAssistantMessage(assistantMessage);
             publisher.publishEvent(new AgentEvent.AgentSpoke(assistantMessage.getText()));
-            if(!assistantMessage.hasToolCalls()){
-                publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()),iteration));
+            if (!assistantMessage.hasToolCalls()) {
+                publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()), iteration));
                 return assistantMessage.getText();
             }
             conversation.addToolResponses(executeAll(assistantMessage));
@@ -92,7 +93,7 @@ public class Agent {
         List<ToolResponseMessage.ToolResponse> toolResponses = new ArrayList<>();
         for (AssistantMessage.ToolCall toolCall : assistantMessage.getToolCalls()) {
             ToolResult toolResult = toolRegistry.execute(toolCall.name(), toolCall.arguments());
-            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(),toolCall.name(),toolResult.content()));
+            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(), toolCall.name(), toolResult.content()));
         }
         return ToolResponseMessage.builder().responses(toolResponses).build();
     }
@@ -104,7 +105,7 @@ public class Agent {
                 .combineWith(
                         ToolCallingChatOptions
                                 .builder()
-                                .toolCallbacks((springAiToolAdapter.toolCallbacks()))
+                                .toolCallbacks((springAiToolAdapter.tools()))
                 )
                 .build();
     }

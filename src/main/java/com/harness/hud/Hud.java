@@ -3,7 +3,7 @@ package com.harness.hud;
 import com.harness.agent.Agent;
 import com.harness.agent.event.AgentEvent;
 import com.harness.context.TokenEstimator;
-import com.harness.tool.Tool;
+import com.harness.tooling.Tool;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -13,7 +13,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.harness.hud.BodyPart.*;
+import static com.harness.hud.BodyPart.forToolName;
 import static com.harness.hud.LanguageUtils.plural;
 
 @Component
@@ -71,7 +71,7 @@ public class Hud {
 
     @EventListener
     public void onTurnFinished(AgentEvent.TurnFinished event) {
-        machinePrinter.showTurnFinished(event.duration(), event.iteration());
+        machinePrinter.showTurnFinished(event.duration());
     }
 
     @EventListener

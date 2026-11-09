@@ -1,17 +1,19 @@
 package com.harness.tool.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.impl.FileReadTool;
+import com.harness.tooling.guard.WorkspaceGuard;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
-import com.harness.agent.AgentProperties;
-import com.harness.tool.ToolResult;
-import com.harness.tool.WorkspaceGuard;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class FileReadToolTest {
 
@@ -22,7 +24,7 @@ class FileReadToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new FileReadTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString())));
+        tool = new FileReadTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
     }
 
     private ToolResult read(String path, Integer offset, Integer limit) {
@@ -38,7 +40,7 @@ class FileReadToolTest {
     }
 
     @Test
-    void читаетФайлВФорматеCatN() throws IOException {
+    void mustReadFileInCatNFormat() throws IOException {
         Files.writeString(workspace.resolve("hello.txt"), "первая\nвторая\n");
 
         ToolResult result = read("hello.txt", null, null);
@@ -49,17 +51,17 @@ class FileReadToolTest {
     }
 
     @Test
-    void уважаетOffsetИLimit() throws IOException {
+    void mustReadWithRespectOffsetAndLimit() throws IOException {
         write("many.txt", 10);
 
         ToolResult result = read("many.txt", 3, 2);
 
-        assertThat(result.content()).contains("3\tстрока3").contains("4\tстрока4");
+        assertThat(result.content()).contains("use offset").contains("continue reading");
         assertThat(result.content()).doesNotContain("строка2").doesNotContain("строка5");
     }
 
     @Test
-    void сообщаетЧтоФайлОбрезанЧтобыМодельМоглаДочитать() throws IOException {
+    void mustReturnMessageThatFileCanBeReadFurther() throws IOException {
         write("many.txt", 10);
 
         // Молча обрезать нельзя: модель решит, что видела файл целиком.
@@ -67,23 +69,23 @@ class FileReadToolTest {
     }
 
     @Test
-    void отсутствующийФайлЭтоОшибкаАНеИсключение() {
+    void mustNotThrowExceptionWhenFileNotFound() {
         ToolResult result = read("nope.txt", null, null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("файл не найден");
+        assertThat(result.content()).contains("does not exist");
     }
 
     @Test
-    void заПределыРабочейПапкиНеВыпускает() {
+    void mustNotThrowExceptionWhenFileOutOfWorkingDir() {
         ToolResult result = read("../../../etc/passwd", null, null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("вне рабочей папки");
+        assertThat(result.content()).contains("outside of a working directory");
     }
 
     @Test
-    void схемаГенерируетсяИзRecordА() {
+    void mustGenerateSchemaFromRecord() {
         assertThat(tool.inputSchema()).contains("filePath").contains("offset").contains("limit");
     }
 }

@@ -13,7 +13,12 @@ public sealed interface AgentEvent {
     record TurnFinished(Duration duration, int iteration) implements AgentEvent {
     }
 
-     record ToolCallStarted(String toolName, String description) implements AgentEvent { }
-     record ToolCallFinished(String toolName, boolean error, String preview, Duration duration) implements AgentEvent { }
-     record TurnLimitReached(int maxTurns) implements AgentEvent { }
+    record ToolCallStarted(String toolName, String description) implements AgentEvent {
+    }
+
+    record ToolCallFinished(String toolName, boolean error, String preview, Duration duration) implements AgentEvent {
+    }
+
+    record TurnLimitReached(int maxTurns) implements AgentEvent {
+    }
 }

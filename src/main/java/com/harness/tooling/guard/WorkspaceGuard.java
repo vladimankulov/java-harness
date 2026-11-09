@@ -9,11 +9,11 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 
 @Component
-public class WorkSpaceGuard {
+public class WorkspaceGuard {
 
     private final Path root;
 
-    public WorkSpaceGuard(AgentProperty agentProperty) {
+    public WorkspaceGuard(AgentProperty agentProperty) {
         this.root = Path.of(agentProperty.workingDirectory()).toAbsolutePath().normalize();
     }
 

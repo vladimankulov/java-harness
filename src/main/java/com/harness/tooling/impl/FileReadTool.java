@@ -2,7 +2,7 @@ package com.harness.tooling.impl;
 
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
-import com.harness.tooling.guard.WorkSpaceGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
@@ -19,9 +19,9 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
     private final static int MAX_LINE_LENGTH = 2000;
     private final static int DEFAULT_LINES_TO_READ = 2000;
 
-    private final WorkSpaceGuard workSpaceGuard;
+    private final WorkspaceGuard workSpaceGuard;
 
-    public FileReadTool(WorkSpaceGuard workSpaceGuard) {
+    public FileReadTool(WorkspaceGuard workSpaceGuard) {
         this.workSpaceGuard = workSpaceGuard;
     }
 
@@ -78,7 +78,7 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
         }
 
         int from = Math.max(1, input.offset == null ? 1 : input.offset);
-        int to = input.limit == null ? 1 : Math.max(1, input.limit);
+        int to = input.limit == null ? Math.min(lines.size(), DEFAULT_LINES_TO_READ) : Math.max(1, input.limit);
 
         if (from > lines.size()) {
             return ToolResult.error("Requested file contains: %d, you asked beyond limit".formatted(lines.size()));

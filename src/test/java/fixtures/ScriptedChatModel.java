@@ -30,6 +30,11 @@ public class ScriptedChatModel implements ChatModel {
         return this;
     }
 
+    public ScriptedChatModel then(AssistantMessage msg) {
+        this.script.add(msg);
+        return this;
+    }
+
     @Override
     public ChatResponse call(@NonNull Prompt prompt) {
         this.receivedPrompts.add(prompt);

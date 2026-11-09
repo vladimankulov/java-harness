@@ -21,7 +21,7 @@ public class ToolRegistry {
     private final Map<String, Tool<?>> availableTools = new HashMap<>();
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    private ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher) {
+    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher) {
         for (Tool<?> tool : tools) {
             Tool<?> existence = availableTools.put(tool.name(), tool);
             if (existence != null) {
@@ -35,19 +35,17 @@ public class ToolRegistry {
         return List.copyOf(availableTools.values());
     }
 
-    public ToolResult execute(AssistantMessage.ToolCall requestedTool) {
-        String toolName = requestedTool.name();
-        String args = requestedTool.arguments();
-        Tool<?> tool = availableTools.get(requestedTool.name());
+    public ToolResult execute(String toolName, String args) {
+        Tool<?> tool = availableTools.get(toolName);
         if (tool == null) {
-            return ToolResult.error("Tool by name: %s not found".formatted(requestedTool.name()));
+            return ToolResult.error("Tool by name: %s not found".formatted(args));
         }
         applicationEventPublisher.publishEvent(new AgentEvent.ToolCallStarted(tool.name(), describeCall(tool, args)));
         Instant start = Instant.now();
         ToolResult toolResult = invoke(tool, args);
 
         applicationEventPublisher.publishEvent(
-                new AgentEvent.ToolCallFinishedEvent(
+                new AgentEvent.ToolCallFinished(
                         toolName,
                         toolResult.error(),
                         toolResult.preview(100),
