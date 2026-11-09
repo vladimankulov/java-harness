@@ -2,6 +2,7 @@ package com.harness.tooling.impl;
 
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
+import com.harness.tooling.guard.Ignored;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -72,7 +73,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
 
         Path root;
         try {
-            root = input.path == null ? workspaceGuard.getRoot() : workspaceGuard.resolve(input.path);
+            root = !StringUtils.hasText(input.path) ? workspaceGuard.getRoot() : workspaceGuard.resolve(input.path);
         } catch (WorkspaceViolationException e) {
             return ToolResult.error(e.getMessage());
         }
@@ -87,6 +88,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
 
         try (Stream<Path> walkedFiles = Files.walk(root)) {
             files = walkedFiles
+                    .filter(file -> !Ignored.contains(root, file))
                     .filter(file -> globMatcher == null || globMatcher.matches(root.relativize(file)))
                     .toList();
         } catch (IOException e) {
@@ -130,17 +132,17 @@ public class GrepTool implements Tool<GrepTool.Input> {
 
         for (Path file : files) {
             List<String> lines = readLines(file);
-            for (int i = 0; i < lines.size(); i++) {
+            for (int i = 0; i < lines.size() && shown < MAX_MATCHES; i++) {
                 if (regex.matcher(lines.get(i)).find()) {
                     builder.append(workspaceGuard.relativize(file));
                     builder.append(" ");
-                    builder.append(i).append("\t").append(lines.get(i).strip()).append("\n");
+                    builder.append(i+1).append("\t").append(lines.get(i).strip()).append("\n");
                     shown += 1;
                 }
-                if (shown >= MAX_MATCHES) {
-                    builder.append("...showed first %d matches, try narrow the pattern %s".formatted(shown, pattern));
-                    break;
-                }
+            }
+            if (shown >= MAX_MATCHES) {
+                builder.append("...showed first %d matches, try narrow the pattern %s".formatted(shown, pattern));
+                break;
             }
         }
         return shown == 0 ? nothingFound(pattern) : ToolResult.ok(builder.toString());
@@ -164,14 +166,14 @@ public class GrepTool implements Tool<GrepTool.Input> {
             return nothingFound(pattern);
         }
 
-        matches.add("Total hits: %s found in %d files".formatted(total, matches.size()));
+        matches.add("Total hints: %s found in %d files".formatted(total, matches.size()));
 
         String content = String.join("\n", matches);
         return ToolResult.ok(content);
     }
 
     private ToolResult nothingFound(String regex) {
-        return ToolResult.error("Nothing is found by regex: %s".formatted(regex));
+        return ToolResult.ok("Nothing is found by regex: %s".formatted(regex));
     }
 
     private boolean fileContentMatchesRegex(Path file, Pattern regex) {

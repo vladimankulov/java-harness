@@ -2,6 +2,7 @@ package com.harness.tooling.impl;
 
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
+import com.harness.tooling.guard.Ignored;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
 import org.springframework.ai.tool.annotation.ToolParam;
@@ -56,9 +57,9 @@ public class GlobTool implements Tool<GlobTool.Input> {
         if (!StringUtils.hasText(input.pattern)) {
             return ToolResult.error("Pattern isn't specified");
         }
-        Path directory;
+        Path root;
         try {
-            directory = input.path == null ? workspaceGuard.getRoot() : workspaceGuard.resolve(input.path);
+            root = !StringUtils.hasText(input.path()) ? workspaceGuard.getRoot() : workspaceGuard.resolve(input.path);
         } catch (WorkspaceViolationException e) {
             return ToolResult.error(e.getMessage());
         }
@@ -72,9 +73,10 @@ public class GlobTool implements Tool<GlobTool.Input> {
 
         List<Path> files;
 
-        try (Stream<Path> walkedFiles = Files.walk(directory)) {
+        try (Stream<Path> walkedFiles = Files.walk(root)) {
             files = walkedFiles
-                    .filter(file -> pathMatcher.matches(directory.resolve(file)))
+                    .filter(file -> !Ignored.contains(root, file))
+                    .filter(file -> pathMatcher.matches(root.relativize(file)))
                     .sorted(Comparator.comparing(GlobTool::modifiedAt).reversed())
                     .limit(MAX_RESULTS + 1)
                     .toList();

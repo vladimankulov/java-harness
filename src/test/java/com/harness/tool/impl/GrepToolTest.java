@@ -69,7 +69,7 @@ class GrepToolTest {
 
         ToolResult result = grep("void run", GrepTool.OutputMode.CONTENT);
 
-        assertThat(result.content()).contains("src/Agent.java:2:void run() {}");
+        assertThat(result.content()).contains("src/Agent.java 2\tvoid run() {}\n");
     }
 
     @Test
@@ -80,7 +80,7 @@ class GrepToolTest {
         ToolResult result = grep("@Test", GrepTool.OutputMode.COUNT);
 
         assertThat(result.content()).contains("src/Agent.java: 2", "src/Hud.java: 1");
-        assertThat(result.content()).contains("всего совпадений: 3 в 2 файлах");
+        assertThat(result.content()).contains("Total hints: 3 found in 2 files");
     }
 
     @Test
@@ -129,7 +129,7 @@ class GrepToolTest {
         ToolResult result = grep("Скайнет", null);
 
         assertThat(result.error()).isFalse();
-        assertThat(result.content()).contains("совпадений не найдено");
+        assertThat(result.content()).contains("Nothing is found");
     }
 
     @Test
@@ -199,7 +199,7 @@ class GrepToolTest {
         }
 
         List<String> lines = grep("совпадение", GrepTool.OutputMode.CONTENT).content().lines().toList();
-        List<String> promise = lines.stream().filter(line -> line.contains("показаны первые")).toList();
+        List<String> promise = lines.stream().filter(line -> line.contains("showed first")).toList();
 
         assertThat(promise).hasSize(1);
         int promised = Integer.parseInt(promise.getFirst().replaceAll("\\D+", " ").strip());

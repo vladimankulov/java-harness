@@ -81,7 +81,7 @@ class FileReadToolTest {
         ToolResult result = read("../../../etc/passwd", null, null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("outside of a working directory");
+        assertThat(result.content()).contains("outside of the working directory");
     }
 
     @Test

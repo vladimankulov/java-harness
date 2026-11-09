@@ -29,7 +29,7 @@ public class WorkspaceGuard {
         Path resolved = (candidate.isAbsolute() ? candidate : root.resolve(candidate)).normalize();
 
         if (!resolved.startsWith(root)) {
-            throw new WorkspaceViolationException("Requested path: '%s' outside of a working directory: '%s'".formatted(resolved, root));
+            throw new WorkspaceViolationException("Requested path: '%s' outside of the working directory: '%s'".formatted(resolved, root));
         }
 
         try {
