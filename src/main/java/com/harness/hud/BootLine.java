@@ -26,7 +26,7 @@ record BootLine(BodyPart part, BootStatus status, Set<String> components) {
         return new BootLine(part, status, components);
     }
 
-    static BootLine empty(BodyPart bodyPart) {
+    public static BootLine empty(BodyPart bodyPart) {
         return new BootLine(bodyPart, BootStatus.ONLINE, new LinkedHashSet<>());
     }
 }

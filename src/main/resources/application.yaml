@@ -14,10 +14,10 @@ spring:
         temperature: 0.2
         model: qwen3.5:2b
 
-harness.agent:
-  workspace-root: .
-  max-turns: 20
-
+harness:
+  agent:
+    max-turns: 20
+    working-directory: "."
 
 logging:
   level:
