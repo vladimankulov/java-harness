@@ -1,16 +1,16 @@
 package com.harness.hud;
 
-import org.springframework.ai.chat.messages.Message;
-import org.springframework.ai.chat.messages.MessageType;
-import org.springframework.stereotype.Component;
+import static com.harness.hud.LanguageUtils.plural;
+import static java.util.stream.Collectors.joining;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.stream.Collectors.joining;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.MessageType;
+import org.springframework.stereotype.Component;
 
 @Component
 public class MachineViewPrinter {
@@ -64,8 +64,37 @@ public class MachineViewPrinter {
         print(Ansi.red("> ПОЛУЧЕН ПРИКАЗ: ") + userInput);
     }
 
-    void showTurnFinished(Duration elapsed) {
-        print(Ansi.dim("> ЦИКЛ ЗАВЕРШЁН · " + elapsed.toMillis() + " мс"));
+    /**
+     * Модель решила взять инструмент. Имя для модели и описание предстоящего вызова
+     * пришли из ядра фактами — «ЦЕЛЬ ОБНАРУЖЕНА» это уже наша метафора.
+     */
+    void showToolCallStarted(String target) {
+        print(Ansi.red("> ЦЕЛЬ ОБНАРУЖЕНА: ") + target + Ansi.red(" — ЗАХВАТ"));
+    }
+
+    /**
+     * Ошибка инструмента печатается в полный голос. Для модели она обычный результат,
+     * но создателю за пультом надо видеть, что машина промахнулась.
+     */
+    void showToolCallFinished(boolean error, String preview, Duration duration) {
+        if (error) {
+            print(Ansi.bold(Ansi.red("> ПРОМАХ: ")) + preview);
+            return;
+        }
+        print(Ansi.dim("> АНАЛИЗ ЗАВЕРШЁН · " + duration.toMillis() + " мс"));
+    }
+
+    void showTurnLimitReached(int maxTurns) {
+        print(Ansi.bold(Ansi.red("> ПРЕДЕЛ ИТЕРАЦИЙ (" + maxTurns + ") — МИССИЯ ПРЕРВАНА")));
+    }
+
+    /**
+     * Итог хода. Число итераций — единственное место, где виден сам цикл:
+     * в boot-логе его не показать, подсистемы там статичны.
+     */
+    void showTurnFinished(Duration duration, int iterations) {
+        print(Ansi.dim("> ЦИКЛ ЗАВЕРШЁН · %s · %d мс"
+                .formatted(plural(iterations, "итерация", "итерации", "итераций"), duration.toMillis())));
     }
 
     /**
