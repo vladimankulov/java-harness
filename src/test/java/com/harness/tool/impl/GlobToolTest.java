@@ -1,16 +1,19 @@
 package com.harness.tool.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.agent.AgentProperties;
-import com.harness.tool.ToolResult;
-import com.harness.tool.WorkspaceGuard;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.GlobTool;
+import com.harness.tooling.impl.GrepTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class GlobToolTest {
 
@@ -21,7 +24,7 @@ class GlobToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new GlobTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString())));
+        tool = new GlobTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
     }
 
     private ToolResult glob(String pattern, String path) {
@@ -100,7 +103,7 @@ class GlobToolTest {
         ToolResult result = glob("**/*.kt", null);
 
         assertThat(result.error()).isFalse();
-        assertThat(result.content()).contains("ничего не найдено");
+        assertThat(result.content()).contains("Files are not found");
     }
 
     @Test
@@ -108,7 +111,7 @@ class GlobToolTest {
         ToolResult result = glob("*.java", "../..");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("вне рабочей папки");
+        assertThat(result.content()).contains("outside of the working directory");
     }
 
     /**
@@ -121,6 +124,6 @@ class GlobToolTest {
         ToolResult result = glob("*.java", "src/nowhere");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("папка не найдена");
+        assertThat(result.content()).contains("Failed to find files");
     }
 }

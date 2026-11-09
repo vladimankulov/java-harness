@@ -35,7 +35,7 @@ public class WorkspaceGuard {
         try {
             Path realPath = resolved.toRealPath();
             if (!realPath.startsWith(root.toRealPath())) {
-                throw new WorkspaceViolationException("Requested path: '%s' outside of a working directory: '%s'".formatted(realPath, root.toRealPath()));
+                throw new WorkspaceViolationException("Requested path: '%s' outside of the working directory: '%s'".formatted(realPath, root.toRealPath()));
             }
         } catch (NoSuchFileException ignored) {
 

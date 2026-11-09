@@ -171,7 +171,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
     }
 
     private ToolResult nothingFound(String regex) {
-        return ToolResult.error("Nothing found by regex: %s".formatted(regex));
+        return ToolResult.error("Nothing is found by regex: %s".formatted(regex));
     }
 
     private boolean fileContentMatchesRegex(Path file, Pattern regex) {
