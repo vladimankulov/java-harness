@@ -89,7 +89,7 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
 
     @Override
     public String renderToolUsage(Input input) {
-        return input.toString();
+        return name() + ":" + input.filePath;
     }
 
     public record Input(

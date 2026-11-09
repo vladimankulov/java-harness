@@ -45,7 +45,7 @@ public class WorkspaceGuard {
         return resolved;
     }
 
-    public String relative(Path path) {
+    public String relativize(Path path) {
         return root.relativize(path).toString().replace("\\", "/");
     }
 }
