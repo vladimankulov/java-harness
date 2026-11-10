@@ -8,8 +8,11 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
+import org.springframework.ai.chat.messages.ToolResponseMessage;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -30,6 +33,10 @@ public class MachineViewPrinter {
     /**
      * Ширина текстовой колонки в панели контекста.
      */
+    /** Столько строк показываем от одной реплики, дальше — «… ещё N строк». */
+    private static final int MAX_ENTRY_LINES = 3;
+
+    /** Ширина текстовой колонки в панели контекста. */
     private static final int CONTEXT_WIDTH = 64;
 
     /**
@@ -65,8 +72,9 @@ public class MachineViewPrinter {
     }
 
     /**
-     * Модель решила взять инструмент. Имя для модели и описание предстоящего вызова
-     * пришли из ядра фактами — «ЦЕЛЬ ОБНАРУЖЕНА» это уже наша метафора.
+     * Как назвать себя, решает сам инструмент: он присылает готовую строку вида
+     * {@code [READ] Tool.java}. Экран её не разбирает, только обрамляет —
+     * «ЦЕЛЬ ОБНАРУЖЕНА» это уже наша метафора.
      */
     void showToolCallStarted(String target) {
         print(Ansi.red("> ЦЕЛЬ ОБНАРУЖЕНА: ") + target + Ansi.red(" — ЗАХВАТ"));
@@ -75,13 +83,25 @@ public class MachineViewPrinter {
     /**
      * Ошибка инструмента печатается в полный голос. Для модели она обычный результат,
      * но создателю за пультом надо видеть, что машина промахнулась.
+     *
+     * <p>Удачный вызов показывает ещё и начало результата: решение агент принимает
+     * не по времени работы, а по тому, что инструмент вернул. Сколько строк
+     * показывать, решено не здесь — экран печатает то, что пришло в событии.
      */
     void showToolCallFinished(boolean error, String preview, Duration duration) {
         if (error) {
             print(Ansi.bold(Ansi.red("> ПРОМАХ: ")) + preview);
             return;
         }
-        print(Ansi.dim("> АНАЛИЗ ЗАВЕРШЁН · " + duration.toMillis() + " мс"));
+        String head = "> АНАЛИЗ ЗАВЕРШЁН · " + duration.toMillis() + " мс";
+        if (preview.isBlank()) {
+            print(Ansi.dim(head));
+            return;
+        }
+        List<String> block = new ArrayList<>();
+        block.add(Ansi.dim(head + " · В НЕЙРОПРОЦЕССОР:"));
+        preview.lines().forEach(line -> block.add(rail(line)));
+        print(block);
     }
 
     void showTurnLimitReached(int maxTurns) {
@@ -179,7 +199,7 @@ public class MachineViewPrinter {
         String indent = " ".repeat(prefix.length());
 
         List<String> lines = new ArrayList<>();
-        List<String> wrapped = wrap(text(message));
+        List<String> wrapped = clamp(wrap(text(message)));
         for (int i = 0; i < wrapped.size(); i++) {
             lines.add(rail(i == 0 ? Ansi.dim(prefix) + wrapped.get(i) : indent + wrapped.get(i)));
         }
@@ -206,13 +226,37 @@ public class MachineViewPrinter {
         };
     }
 
+    /**
+     * Текст реплики для панели. У вызова инструмента и у его ответа содержимое лежит
+     * не в {@code getText()}, поэтому раньше такие реплики молча пропадали, а номера
+     * шли «1, 6, 7». В контекст они уехали — значит, и на экране должны быть.
+     */
     private static String text(Message message) {
+        if (message instanceof AssistantMessage assistant && assistant.hasToolCalls()) {
+            return assistant.getToolCalls().stream()
+                    .map(call -> call.name() + " " + call.arguments())
+                    .collect(joining("; "));
+        }
+        if (message instanceof ToolResponseMessage toolResponse) {
+            return toolResponse.getResponses().stream()
+                    .map(response -> response.responseData())
+                    .collect(joining("; "));
+        }
         return message.getText() == null ? "" : message.getText();
     }
 
-    /**
-     * Перенос по словам: слово целее строки. Длиннее ширины — режем, иначе панель разъедется.
-     */
+    /** Длинную реплику сворачиваем: панель показывает состав контекста, а не его целиком. */
+    private static List<String> clamp(List<String> lines) {
+        if (lines.size() <= MAX_ENTRY_LINES) {
+            return lines;
+        }
+        List<String> clamped = new ArrayList<>(lines.subList(0, MAX_ENTRY_LINES));
+        clamped.add(Ansi.dim("… ещё %s".formatted(
+                plural(lines.size() - MAX_ENTRY_LINES, "строка", "строки", "строк"))));
+        return clamped;
+    }
+
+    /** Перенос по словам: слово целее строки. Длиннее ширины — режем, иначе панель разъедется. */
     private static List<String> wrap(String text) {
         List<String> lines = new ArrayList<>();
         for (String paragraph : text.lines().toList()) {

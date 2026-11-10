@@ -29,13 +29,13 @@ public class WorkspaceGuard {
         Path resolved = (candidate.isAbsolute() ? candidate : root.resolve(candidate)).normalize();
 
         if (!resolved.startsWith(root)) {
-            throw new WorkspaceViolationException("Requested path: '%s' outside of a working directory: '%s'".formatted(resolved, root));
+            throw new WorkspaceViolationException("Requested path: '%s' outside of the working directory: '%s'".formatted(resolved, root));
         }
 
         try {
             Path realPath = resolved.toRealPath();
             if (!realPath.startsWith(root.toRealPath())) {
-                throw new WorkspaceViolationException("Requested path: '%s' outside of a working directory: '%s'".formatted(realPath, root.toRealPath()));
+                throw new WorkspaceViolationException("Requested path: '%s' outside of the working directory: '%s'".formatted(realPath, root.toRealPath()));
             }
         } catch (NoSuchFileException ignored) {
 
@@ -45,7 +45,7 @@ public class WorkspaceGuard {
         return resolved;
     }
 
-    public String relative(Path path) {
+    public String relativize(Path path) {
         return root.relativize(path).toString().replace("\\", "/");
     }
 }
