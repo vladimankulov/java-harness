@@ -12,6 +12,7 @@ services:
       # Модель не выгружается между ходами агента: иначе каждый ход
       # начинается с повторной загрузки весов в VRAM.
       - OLLAMA_KEEP_ALIVE=30m
+      - OLLAMA_MLX=1
 #    deploy:
 #      resources:
 #        reservations:

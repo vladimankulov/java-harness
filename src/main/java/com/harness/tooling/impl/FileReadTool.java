@@ -1,5 +1,6 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.WorkspaceGuard;
@@ -49,7 +50,7 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
     }
 
     @Override
-    public ToolResult call(Input input) {
+    public ToolResult call(Input input, ToolContext context) {
         Path toFile;
         try {
             toFile = workSpaceGuard.resolve(input.filePath);
@@ -72,6 +73,7 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
         catch (IOException e) {
             return ToolResult.error("Failed to read the file: '%s', err: %s".formatted(input.filePath, e.getMessage()));
         }
+        context.fileStateGuard().remember(toFile);
 
         if (CollectionUtils.isEmpty(lines)) {
             return ToolResult.ok("");

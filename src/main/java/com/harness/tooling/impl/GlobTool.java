@@ -1,5 +1,6 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.Ignored;
@@ -53,7 +54,7 @@ public class GlobTool implements Tool<GlobTool.Input> {
     }
 
     @Override
-    public ToolResult call(Input input) {
+    public ToolResult call(Input input, ToolContext context) {
         if (!StringUtils.hasText(input.pattern)) {
             return ToolResult.error("Pattern isn't specified");
         }
@@ -69,6 +70,14 @@ public class GlobTool implements Tool<GlobTool.Input> {
             pathMatcher = matcherFor(input.pattern);
         } catch (IllegalArgumentException e) {
             return ToolResult.error("Failed to read pattern syntax, err: %s".formatted(e.getMessage()));
+        }
+
+        if (!Files.exists(root)) {
+            return ToolResult.error("Path: %s not found".formatted(input.path));
+        }
+
+        if (!Files.isDirectory(root)) {
+            return ToolResult.error("Failed to traverse the directory: %s".formatted(input.path));
         }
 
         List<Path> files;

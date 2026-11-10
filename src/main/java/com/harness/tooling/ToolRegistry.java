@@ -1,7 +1,9 @@
 package com.harness.tooling;
 
 import com.harness.agent.event.AgentEvent;
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.util.JsonHelper;
 import org.springframework.context.ApplicationEventPublisher;
@@ -20,8 +22,9 @@ public class ToolRegistry {
     private final JsonHelper jsonHelper = new JsonHelper();
     private final Map<String, Tool<?>> availableTools = new HashMap<>();
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final ToolContext toolContext;
 
-    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher) {
+    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher, FileStateGuard fileStateGuard) {
         for (Tool<?> tool : tools) {
             Tool<?> existence = availableTools.put(tool.name(), tool);
             if (existence != null) {
@@ -29,6 +32,7 @@ public class ToolRegistry {
             }
         }
         this.applicationEventPublisher = applicationEventPublisher;
+        this.toolContext = new ToolContext(fileStateGuard);
     }
 
     public List<Tool<?>> tools() {
@@ -61,7 +65,7 @@ public class ToolRegistry {
             return ToolResult.error("Failed to read arguments for tool: %s, expected: %s, err: %s".formatted(tool.name(), tool.inputSchema(), e.getMessage()));
         }
         try {
-            return tool.call(input);
+            return tool.call(input, toolContext);
         } catch (Exception e) {
             return ToolResult.error("Failed to execute the tool: %s, err: %s".formatted(tool.name(), e.getMessage()));
         }

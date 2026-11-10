@@ -124,6 +124,6 @@ class GlobToolTest {
         ToolResult result = glob("*.java", "src/nowhere");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("Failed to find files");
+        assertThat(result.content()).contains("Path: src/nowhere not found");
     }
 }
