@@ -28,7 +28,7 @@ class GlobToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new GlobTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
+        tool = new GlobTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult glob(String pattern, String path) {

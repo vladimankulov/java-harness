@@ -28,7 +28,7 @@ class FileEditToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new FileEditTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
+        tool = new FileEditTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult edit(String path, String oldString, String newString, Boolean replaceAll) {

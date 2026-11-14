@@ -29,5 +29,8 @@ public class DemoRunner implements CommandLineRunner {
 //        System.out.println(agent.run("Tell me what is the purpose of the ToolRegistry"));
 //        System.out.println(agent.run("Who is listening the ToolCallFinished event"));
 //        System.out.println(agent.run("Are you sure?"));
+        System.out.println(agent.run("""
+                На какой ветке git мы сейчас работаем и есть ли незакоммиченные изменения?
+                И что это вообще за проект? Ответь коротко."""));
     }
 }

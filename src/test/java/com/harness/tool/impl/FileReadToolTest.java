@@ -27,7 +27,7 @@ class FileReadToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new FileReadTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
+        tool = new FileReadTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult read(String path, Integer offset, Integer limit) {
