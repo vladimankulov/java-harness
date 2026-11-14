@@ -19,10 +19,14 @@ import org.springframework.stereotype.Component;
 public class MachineViewPrinter {
 
     private static final String NEW_LINE = System.lineSeparator();
+
     private static final String BLANK = "";
+
     private static final String HEADER =
             Ansi.bold(Ansi.brightRed("CYBERDYNE SYSTEMS   SERIES T-800   BOOT SEQUENCE"));
+
     private static final String MISSION = Ansi.dim("MISSION: ждёт постановки задачи");
+
     private static final String CONTEXT_FOOTER = Ansi.dim("  └─ ПЕРЕДАНО В НЕЙРОПРОЦЕССОР");
 
     /**

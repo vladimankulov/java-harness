@@ -22,9 +22,11 @@
         <!-- Java 25 — новейшая LTS: поддержка до сен-2030 против сен-2028 у Java 21 (F-14, F-15) -->
         <java.version>25</java.version>
         <spring-ai.version>2.0.0</spring-ai.version>
-        <!-- Тесты, которым нужны живые Ollama или MCP-сервер. Обычный `mvnw test`
-             их пропускает. Прогнать только их: mvnw test -Dgroups=ollama -Dexcluded.groups= -->
-        <excluded.groups>ollama,mcp</excluded.groups>
+        <!-- Тесты, которым нужны живые Ollama или MCP-сервер, и приёмка мишени:
+             она проверяет код, который написал агент, и в репозитории красна всегда.
+             Обычный `mvnw test` их пропускает. Прогнать только их:
+             mvnw test -Dgroups=ollama -Dexcluded.groups= -->
+        <excluded.groups>ollama,mcp,mission</excluded.groups>
     </properties>
 
     <dependencyManagement>

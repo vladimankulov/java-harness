@@ -68,8 +68,8 @@ public class Agent {
             AssistantMessage assistantMessage = askModel();
             conversation.addAssistantMessage(assistantMessage);
             publisher.publishEvent(new AgentEvent.AgentSpoke(assistantMessage.getText()));
-            if (!assistantMessage.hasToolCalls()) {
-                publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()), iteration));
+            if(!assistantMessage.hasToolCalls()){
+                publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()),iteration));
                 return assistantMessage.getText();
             }
             conversation.addToolResponses(executeAll(assistantMessage));
@@ -93,7 +93,7 @@ public class Agent {
         List<ToolResponseMessage.ToolResponse> toolResponses = new ArrayList<>();
         for (AssistantMessage.ToolCall toolCall : assistantMessage.getToolCalls()) {
             ToolResult toolResult = toolRegistry.execute(toolCall.name(), toolCall.arguments());
-            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(), toolCall.name(), toolResult.content()));
+            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(),toolCall.name(),toolResult.content()));
         }
         return ToolResponseMessage.builder().responses(toolResponses).build();
     }

@@ -20,6 +20,8 @@ class GlobToolTest {
     @TempDir
     Path workspace;
 
+    private final ToolContext context = new ToolContext(new FileStateCache());
+
     private GlobTool tool;
 
     @BeforeEach
@@ -28,7 +30,7 @@ class GlobToolTest {
     }
 
     private ToolResult glob(String pattern, String path) {
-        return tool.call(new GlobTool.Input(pattern, path));
+        return tool.call(new GlobTool.Input(pattern, path), context);
     }
 
     private void create(String relativePath) throws IOException {
