@@ -26,8 +26,8 @@ public class DemoRunner implements CommandLineRunner {
 //        System.out.println(agent.run("Who are you, give me response in one sentence"));
 //        System.out.println(agent.run("Repeat what you have said"));
 //        System.out.println(agent.run("What java version this project uses"));
-        System.out.println(agent.run("Tell me what is the purpose of the ToolRegistry"));
-        System.out.println(agent.run("Who is listening the ToolCallFinished event"));
-        System.out.println(agent.run("Are you sure?"));
+//        System.out.println(agent.run("Tell me what is the purpose of the ToolRegistry"));
+//        System.out.println(agent.run("Who is listening the ToolCallFinished event"));
+//        System.out.println(agent.run("Are you sure?"));
     }
 }

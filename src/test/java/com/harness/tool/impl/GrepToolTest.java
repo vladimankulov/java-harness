@@ -1,7 +1,9 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.GrepTool;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +22,8 @@ class GrepToolTest {
     @TempDir
     Path workspace;
 
+    private final ToolContext context = new ToolContext(new FileStateGuard());
+
     private GrepTool tool;
 
     @BeforeEach
@@ -28,7 +32,7 @@ class GrepToolTest {
     }
 
     private ToolResult grep(String pattern, GrepTool.OutputMode mode) {
-        return tool.call(new GrepTool.Input(pattern, null, null, mode, null));
+        return tool.call(new GrepTool.Input(pattern, null, null, mode, null), context);
     }
 
     private void create(String relativePath, String content) throws IOException {
@@ -88,7 +92,7 @@ class GrepToolTest {
         create("src/Agent.java", "class Agent {}\n");
         create("notes/Agent.md", "class Agent {}\n");
 
-        ToolResult result = tool.call(new GrepTool.Input("class Agent", null, "**/*.java", null, null));
+        ToolResult result = tool.call(new GrepTool.Input("class Agent", null, "**/*.java", null, null), context);
 
         assertThat(result.content()).contains("src/Agent.java");
         assertThat(result.content()).doesNotContain("Agent.md");
@@ -101,7 +105,7 @@ class GrepToolTest {
     void шаблонСоЗвёздочкамиНаходитИФайлВКорне() throws IOException {
         create("Root.java", "class Agent {}\n");
 
-        ToolResult result = tool.call(new GrepTool.Input("class Agent", null, "**/*.java", null, null));
+        ToolResult result = tool.call(new GrepTool.Input("class Agent", null, "**/*.java", null, null), context);
 
         assertThat(result.content()).contains("Root.java");
     }
@@ -153,7 +157,7 @@ class GrepToolTest {
 
     @Test
     void выходЗаРабочуюПапкуЗапрещён() {
-        ToolResult result = tool.call(new GrepTool.Input("class Agent", "../..", null, null, null));
+        ToolResult result = tool.call(new GrepTool.Input("class Agent", "../..", null, null, null), context);
 
         assertThat(result.error()).isTrue();
         assertThat(result.content()).contains("outside of the working directory");
@@ -166,7 +170,7 @@ class GrepToolTest {
      */
     @Test
     void папкиНетЭтоОшибка() {
-        ToolResult result = tool.call(new GrepTool.Input("class Agent", "src/nowhere", null, null, null));
+        ToolResult result = tool.call(new GrepTool.Input("class Agent", "src/nowhere", null, null, null), context);
 
         assertThat(result.error()).isTrue();
         assertThat(result.content()).contains("not found");
@@ -176,8 +180,8 @@ class GrepToolTest {
     void регистрМожноИгнорировать() throws IOException {
         create("src/Agent.java", "class Agent {}\n");
 
-        ToolResult strict = tool.call(new GrepTool.Input("CLASS AGENT", null, null, null, null));
-        ToolResult relaxed = tool.call(new GrepTool.Input("CLASS AGENT", null, null, null, true));
+        ToolResult strict = tool.call(new GrepTool.Input("CLASS AGENT", null, null, null, null), context);
+        ToolResult relaxed = tool.call(new GrepTool.Input("CLASS AGENT", null, null, null, true), context);
 
         assertThat(strict.content()).contains("Nothing is found by regex");
         assertThat(relaxed.content()).contains("src/Agent.java");

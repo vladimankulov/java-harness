@@ -1,7 +1,9 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.impl.FileReadTool;
 import com.harness.tooling.guard.WorkspaceGuard;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +21,8 @@ class FileReadToolTest {
 
     @TempDir
     Path workspace;
-
+    private final FileStateGuard cache = new FileStateGuard();
+    private final ToolContext context = new ToolContext(cache);
     private FileReadTool tool;
 
     @BeforeEach
@@ -28,7 +31,7 @@ class FileReadToolTest {
     }
 
     private ToolResult read(String path, Integer offset, Integer limit) {
-        return tool.call(new FileReadTool.Input(path, offset, limit));
+        return tool.call(new FileReadTool.Input(path, offset, limit), context);
     }
 
     private void write(String name, int lines) throws IOException {

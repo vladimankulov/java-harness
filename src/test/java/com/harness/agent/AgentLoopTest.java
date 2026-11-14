@@ -1,7 +1,8 @@
 package com.harness.agent;
 
-import com.harness.tooling.Tool;
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.Tool;
 import fixtures.RecordingEventPublisher;
 import fixtures.ScriptedChatModel;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ class AgentLoopTest {
         }
 
         @Override
-        public ToolResult call(Input input) {
+        public ToolResult call(Input input, ToolContext context) {
             calls.add(input.value());
             return answer;
         }

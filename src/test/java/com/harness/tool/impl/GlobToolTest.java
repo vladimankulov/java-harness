@@ -1,7 +1,9 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.GlobTool;
 import com.harness.tooling.impl.GrepTool;
@@ -20,6 +22,8 @@ class GlobToolTest {
     @TempDir
     Path workspace;
 
+    private final ToolContext context = new ToolContext(new FileStateGuard());
+
     private GlobTool tool;
 
     @BeforeEach
@@ -28,7 +32,7 @@ class GlobToolTest {
     }
 
     private ToolResult glob(String pattern, String path) {
-        return tool.call(new GlobTool.Input(pattern, path));
+        return tool.call(new GlobTool.Input(pattern, path), context);
     }
 
     private void create(String relativePath) throws IOException {
@@ -124,6 +128,6 @@ class GlobToolTest {
         ToolResult result = glob("*.java", "src/nowhere");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("Failed to find files");
+        assertThat(result.content()).contains("Path: src/nowhere not found");
     }
 }

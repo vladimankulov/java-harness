@@ -1,5 +1,6 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.Ignored;
@@ -41,7 +42,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
     public String description() {
         return """
                 Searches inside files with a regular expression. Use this when you know
-                that the code says, but not which file says it. To find a file by its name, use Glob instead.
+                that the code says, but not which file says it.
                 
                 Usage:
                 - Output modes: FILES_WITH_MATHCES lists path(default), CONTENT shows matching lines with
@@ -58,7 +59,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
     }
 
     @Override
-    public ToolResult call(Input input) {
+    public ToolResult call(Input input, ToolContext context) {
         if (!StringUtils.hasText(input.pattern)) {
             return ToolResult.error("Pattern not specified!");
         }
@@ -78,8 +79,12 @@ public class GrepTool implements Tool<GrepTool.Input> {
             return ToolResult.error(e.getMessage());
         }
 
+        if (!Files.exists(root)) {
+            return ToolResult.error("Path: %s not found".formatted(input.path));
+        }
+
         if (!Files.isDirectory(root)) {
-            return ToolResult.error("Directory by path: %s not found".formatted(input.path));
+            return ToolResult.error("Failed to traverse the directory: %s".formatted(input.path));
         }
 
         PathMatcher globMatcher = StringUtils.hasText(input.glob) ? GlobTool.matcherFor(input.glob) : null;
