@@ -3,6 +3,7 @@ package com.harness.agent;
 import com.harness.agent.event.AgentEvent;
 import com.harness.agent.property.AgentProperty;
 import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
+import com.harness.context.ContextManager;
 import com.harness.model.Conversation;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.ToolRegistry;
@@ -24,21 +25,23 @@ import java.util.List;
 @Service
 public class Agent {
 
-    private static final String SYSTEM_PROMPT = """
-            You are Harness, a coding agent that works in a local repository.
-            
-            You have tools for inspecting the project. Use them instead of guessing:
-            if the user asks about a file, read it first, then answer from what you read.
-            Never claim you have seen a file that you did not read with a tool.
-            
-            Answer concisely.""";
+
     private final ApplicationEventPublisher publisher;
 
-    private final Conversation conversation = new Conversation(SYSTEM_PROMPT);
+    private final Conversation conversation;
     private final ToolRegistry toolRegistry;
     private final AgentProperty agentProperties;
     private final SpringAiToolCallbackAdapter springAiToolAdapter;
 
+
+    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher, ToolRegistry toolRegistry, SpringAiToolCallbackAdapter springAiToolAdapter, AgentProperty agentProperties, ContextManager contextManager) {
+        this.chatModel = chatModel;
+        this.publisher = publisher;
+        this.toolRegistry = toolRegistry;
+        this.springAiToolAdapter = springAiToolAdapter;
+        this.agentProperties = agentProperties;
+        this.conversation = new Conversation(contextManager.systemPrompt());
+    }
 
     public Conversation conversation() {
         return conversation;
@@ -52,14 +55,6 @@ public class Agent {
         return chatModel.getOptions().getModel();
     }
 
-    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher, ToolRegistry toolRegistry, SpringAiToolCallbackAdapter springAiToolAdapter, AgentProperty agentProperties) {
-        this.chatModel = chatModel;
-        this.publisher = publisher;
-        this.toolRegistry = toolRegistry;
-        this.springAiToolAdapter = springAiToolAdapter;
-        this.agentProperties = agentProperties;
-    }
-
     public String run(String userMessage) {
         Instant startTime = Instant.now();
         conversation.addUserMessage(userMessage);
@@ -68,8 +63,8 @@ public class Agent {
             AssistantMessage assistantMessage = askModel();
             conversation.addAssistantMessage(assistantMessage);
             publisher.publishEvent(new AgentEvent.AgentSpoke(assistantMessage.getText()));
-            if(!assistantMessage.hasToolCalls()){
-                publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()),iteration));
+            if (!assistantMessage.hasToolCalls()) {
+                publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()), iteration));
                 return assistantMessage.getText();
             }
             conversation.addToolResponses(executeAll(assistantMessage));
@@ -93,7 +88,7 @@ public class Agent {
         List<ToolResponseMessage.ToolResponse> toolResponses = new ArrayList<>();
         for (AssistantMessage.ToolCall toolCall : assistantMessage.getToolCalls()) {
             ToolResult toolResult = toolRegistry.execute(toolCall.name(), toolCall.arguments());
-            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(),toolCall.name(),toolResult.content()));
+            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(), toolCall.name(), toolResult.content()));
         }
         return ToolResponseMessage.builder().responses(toolResponses).build();
     }

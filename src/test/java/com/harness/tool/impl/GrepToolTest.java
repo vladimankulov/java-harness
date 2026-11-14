@@ -28,7 +28,7 @@ class GrepToolTest {
 
     @BeforeEach
     void setUp() {
-        tool = new GrepTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
+        tool = new GrepTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult grep(String pattern, GrepTool.OutputMode mode) {

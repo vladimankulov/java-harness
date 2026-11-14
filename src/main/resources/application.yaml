@@ -18,6 +18,7 @@ harness:
   agent:
     max-turns: 20
     working-directory: "."
+    personality-enabled: false
 
 logging:
   level:

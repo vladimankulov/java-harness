@@ -7,7 +7,8 @@ import org.springframework.util.StringUtils;
 @ConfigurationProperties("harness.agent")
 public record AgentProperty(
         @DefaultValue("20") int maxTurns,
-        @DefaultValue(".") String workingDirectory
+        @DefaultValue(".") String workingDirectory,
+        @DefaultValue("true") boolean personalityEnabled
 ) {
 
     public AgentProperty {
