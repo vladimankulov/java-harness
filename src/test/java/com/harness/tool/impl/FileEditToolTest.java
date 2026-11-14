@@ -1,39 +1,43 @@
 package com.harness.tool.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.agent.AgentProperties;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.ToolContext;
-import com.harness.tool.ToolResult;
-import com.harness.tool.WorkspaceGuard;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.FileEditTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class FileEditToolTest {
 
     @TempDir
     Path workspace;
 
-    private final FileStateCache cache = new FileStateCache();
+    private final FileStateGuard cache = new FileStateGuard();
     private final ToolContext context = new ToolContext(cache);
 
     private FileEditTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new FileEditTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString())));
+        tool = new FileEditTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
     }
 
     private ToolResult edit(String path, String oldString, String newString, Boolean replaceAll) {
         return tool.call(new FileEditTool.Input(path, oldString, newString, replaceAll), context);
     }
 
-    /** Файл, который агент «прочитал»: именно так его кладёт в кэш {@code Read}. */
+    /**
+     * Файл, который агент «прочитал»: именно так его кладёт в кэш {@code Read}.
+     */
     private Path прочитанный(String name, String content) throws IOException {
         Path file = Files.writeString(workspace.resolve(name), content);
         cache.remember(file);
@@ -61,7 +65,7 @@ class FileEditToolTest {
         ToolResult result = edit("Agent.java", "class Agent {}", "class Agent { }", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("не был прочитан", "Read");
+        assertThat(result.content()).contains("hasn't been read yet", "Read");
     }
 
     @Test
@@ -74,7 +78,7 @@ class FileEditToolTest {
         ToolResult result = edit("Agent.java", "class Agent {", "class Robot {", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("изменился");
+        assertThat(result.content()).contains("has changed");
     }
 
     /**
@@ -88,7 +92,7 @@ class FileEditToolTest {
         ToolResult result = edit("Agent.java", "int x = 1;", "int x = 2;", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("встречается 2", "replaceAll");
+        assertThat(result.content()).contains("found 2 times", "replaceAll");
     }
 
     @Test
@@ -113,7 +117,7 @@ class FileEditToolTest {
         ToolResult result = edit("Agent.java", "class Robot {}", "class Android {}", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("текст не найден", "Read");
+        assertThat(result.content()).contains("string not found", "Read");
         assertThat(Files.readString(file)).isEqualTo("class Agent {}\n");
     }
 
@@ -134,7 +138,7 @@ class FileEditToolTest {
         ToolResult result = edit("Agent.java", "int x = 1;", "int x = 1;", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("совпадают");
+        assertThat(result.content()).contains("strings are equal");
     }
 
     @Test
@@ -142,7 +146,7 @@ class FileEditToolTest {
         ToolResult result = edit("нет-такого.java", "a", "b", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("файл не найден");
+        assertThat(result.content()).contains("does not exists");
     }
 
     @Test
@@ -150,6 +154,6 @@ class FileEditToolTest {
         ToolResult result = edit("../../чужое.java", "a", "b", null);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("вне рабочей папки");
+        assertThat(result.content()).contains("outside of the working directory");
     }
 }

@@ -1,11 +1,11 @@
 package com.harness.tool.impl;
 
-
-import com.harness.agent.AgentProperties;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.ToolContext;
-import com.harness.tool.ToolResult;
-import com.harness.tool.WorkspaceGuard;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.GrepTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,13 +22,13 @@ class GrepToolTest {
     @TempDir
     Path workspace;
 
-    private final ToolContext context = new ToolContext(new FileStateCache());
+    private final ToolContext context = new ToolContext(new FileStateGuard());
 
     private GrepTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new GrepTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString())));
+        tool = new GrepTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
     }
 
     private ToolResult grep(String pattern, GrepTool.OutputMode mode) {
@@ -146,7 +146,7 @@ class GrepToolTest {
 
     @Test
     void бинарныйФайлНеРонаетПоиск() throws IOException {
-        Files.write(workspace.resolve("icon.bin"), new byte[] {(byte) 0xC3, (byte) 0x28, (byte) 0xA9});
+        Files.write(workspace.resolve("icon.bin"), new byte[]{(byte) 0xC3, (byte) 0x28, (byte) 0xA9});
         create("src/Agent.java", "class Agent {}\n");
 
         ToolResult result = grep("class Agent", null);

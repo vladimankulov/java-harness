@@ -1,19 +1,21 @@
 package com.harness.tool;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.harness.tooling.guard.FileStateGuard;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-class FileStateCacheTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+class FileStateGuardTest {
 
     @TempDir
     Path workspace;
 
-    private final FileStateCache cache = new FileStateCache();
+    private final FileStateGuard cache = new FileStateGuard();
 
     @Test
     void новыйФайлПисатьМожно() {
@@ -24,7 +26,7 @@ class FileStateCacheTest {
     void непрочитанныйФайлПисатьНельзя() throws IOException {
         Path file = Files.writeString(workspace.resolve("Agent.java"), "class Agent {}\n");
 
-        assertThat(cache.whyCannotWrite(file)).contains("не был прочитан", "Read");
+        assertThat(cache.whyCannotWrite(file)).contains("hasn't been read yet", "Read");
     }
 
     @Test
@@ -44,7 +46,7 @@ class FileStateCacheTest {
         Files.writeString(file, "class Agent { void run() {} }\n");
         touchLater(file);
 
-        assertThat(cache.whyCannotWrite(file)).contains("изменился", "Read");
+        assertThat(cache.whyCannotWrite(file)).contains("has changed", "Read");
     }
 
     /**

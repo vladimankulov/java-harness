@@ -1,7 +1,9 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.GlobTool;
 import com.harness.tooling.impl.GrepTool;
@@ -20,7 +22,7 @@ class GlobToolTest {
     @TempDir
     Path workspace;
 
-    private final ToolContext context = new ToolContext(new FileStateCache());
+    private final ToolContext context = new ToolContext(new FileStateGuard());
 
     private GlobTool tool;
 

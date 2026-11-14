@@ -1,32 +1,34 @@
 package com.harness.tool.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.agent.AgentProperties;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.ToolContext;
-import com.harness.tool.ToolResult;
-import com.harness.tool.WorkspaceGuard;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.FileWriteTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class FileWriteToolTest {
 
     @TempDir
     Path workspace;
 
-    private final FileStateCache cache = new FileStateCache();
+    private final FileStateGuard cache = new FileStateGuard();
     private final ToolContext context = new ToolContext(cache);
 
     private FileWriteTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new FileWriteTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString())));
+        tool = new FileWriteTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString())));
     }
 
     private ToolResult write(String path, String content) {
@@ -59,7 +61,7 @@ class FileWriteToolTest {
         ToolResult result = write("Agent.java", "class Agent {}\n");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("не был прочитан", "Read");
+        assertThat(result.content()).contains("hasn't been read", "Read");
         assertThat(Files.readString(file)).isEqualTo("чужая работа\n");
     }
 
@@ -88,7 +90,7 @@ class FileWriteToolTest {
         ToolResult result = write("../../чужое.java", "class Agent {}\n");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("вне рабочей папки");
+        assertThat(result.content()).contains("outside of the working directory");
     }
 
     @Test
@@ -98,6 +100,6 @@ class FileWriteToolTest {
         ToolResult result = write("src", "class Agent {}\n");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("это папка");
+        assertThat(result.content()).contains("is directory");
     }
 }

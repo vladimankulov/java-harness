@@ -1,7 +1,7 @@
 package com.harness.agent;
 
+import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
-import com.harness.tool.ToolContext;
 import com.harness.tooling.Tool;
 import fixtures.RecordingEventPublisher;
 import fixtures.ScriptedChatModel;
