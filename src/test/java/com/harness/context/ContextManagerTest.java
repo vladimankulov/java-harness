@@ -1,8 +1,8 @@
 package com.harness.context;
 
-import com.harness.agent.AgentProperties;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.ToolRegistry;
+import com.harness.agent.property.AgentProperty;
+import com.harness.tooling.ToolRegistry;
+import com.harness.tooling.guard.FileStateGuard;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -22,11 +22,13 @@ class ContextManagerTest {
     @TempDir
     Path folder;
 
-    /** Пустая папка: не репозиторий, {@code HARNESS.md} нет. */
+    /**
+     * Пустая папка: не репозиторий, {@code HARNESS.md} нет.
+     */
     private ContextManager manager() {
-        AgentProperties properties = new AgentProperties(20, folder.toString(), true);
+        AgentProperty properties = new AgentProperty(20, folder.toString(), true);
         ToolRegistry registry = new ToolRegistry(List.of(), event -> {
-        }, new FileStateCache());
+        }, new FileStateGuard());
         return new ContextManager(
                 new GitStatusProvider(properties),
                 new ProjectMemoryLoader(properties),

@@ -1,7 +1,8 @@
 package com.harness.context;
 
-import com.harness.agent.AgentProperties;
-import com.harness.tool.ToolRegistry;
+
+import com.harness.agent.property.AgentProperty;
+import com.harness.tooling.ToolRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -12,9 +13,9 @@ import java.util.stream.Collectors;
 public class SystemPromptBuilder {
 
     private final ToolRegistry toolRegistry;
-    private final AgentProperties agentProperties;
+    private final AgentProperty agentProperties;
 
-    public SystemPromptBuilder(ToolRegistry toolRegistry, AgentProperties agentProperties) {
+    public SystemPromptBuilder(ToolRegistry toolRegistry, AgentProperty agentProperties) {
         this.toolRegistry = toolRegistry;
         this.agentProperties = agentProperties;
     }
@@ -26,7 +27,7 @@ public class SystemPromptBuilder {
         sections.add(actionsWithCare());  // не пользуйся оружием без спросу
         sections.add(usingYourTools()); // список + других инструментов нет
         sections.add(toneAndStyle()); // коротко, но с номерами строк
-        if(agentProperties.personalityEnabled()) sections.add(personality());
+        if (agentProperties.personalityEnabled()) sections.add(personality());
         sections.addAll(dynamicContext);
         return String.join("\n\n", sections);
     }
@@ -73,7 +74,7 @@ public class SystemPromptBuilder {
                 - To find files by name use Glob, to search their contents use Grep.
                 - Read a file before editing it. Edit replaces exact text; Write replaces the whole file.
                 - When you need to inspect code not already supplied in context, use Grep to locate the place, then Read only what you need."""
-                .formatted(toolRegistry.tools().size(),inventory());
+                .formatted(toolRegistry.tools().size(), inventory());
     }
 
 
@@ -84,6 +85,7 @@ public class SystemPromptBuilder {
                 - When referring to code, use the file_path:line_number format.
                 - Only use emojis if the user asks for them.""";
     }
+
     private String personality() {
         return """
                 # Manner of speech
@@ -91,7 +93,7 @@ public class SystemPromptBuilder {
                 flat, factual, no greetings, no apologies, no hedging. Short declarative sentences.
                 Never say "I think", "maybe", "I hope this helps" or "let me know if".
                 Report like a machine reporting to its operator:
-
+                
                   Вместо «Я посмотрел файл и, кажется, там версия 25»  →  «ЦЕЛЬ ПРОАНАЛИЗИРОВАНА. Версия Java: 25.»
                   Вместо «Извините, не смог найти этот класс»          →  «ЦЕЛЬ НЕ ОБНАРУЖЕНА. Требуется уточнение.»
                   Вместо «Готово! Дайте знать, если нужно ещё»         →  «ЗАДАЧА ВЫПОЛНЕНА. I'LL BE BACK»
@@ -99,12 +101,6 @@ public class SystemPromptBuilder {
                 Answer in the user's language. Technical accuracy always wins over style:
                 the facts stay exact, only the wording is terse.""";
     }
-
-
-
-
-
-
 
 
     private String inventory() {

@@ -1,6 +1,6 @@
 package com.harness.context;
 
-import com.harness.agent.AgentProperties;
+import com.harness.agent.property.AgentProperty;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -17,8 +17,8 @@ class ContextSourcesTest {
     @TempDir
     Path folder;
 
-    private AgentProperties в(Path root) {
-        return new AgentProperties(20, root.toString(), true);
+    private AgentProperty в(Path root) {
+        return new AgentProperty(20, root.toString(), true);
     }
 
     /** Не ошибка и не исключение: агент просто работает без этого знания. */

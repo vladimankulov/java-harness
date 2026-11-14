@@ -1,6 +1,6 @@
 package com.harness.context;
 
-import com.harness.agent.AgentProperties;
+import com.harness.agent.property.AgentProperty;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +18,13 @@ public class ProjectMemoryLoader {
 
     private final Path workspaceRoot;
 
-    public ProjectMemoryLoader(AgentProperties properties) {
-        this.workspaceRoot = Path.of(properties.workspaceRoot()).toAbsolutePath().normalize();
+    public ProjectMemoryLoader(AgentProperty properties) {
+        this.workspaceRoot = Path.of(properties.workingDirectory()).toAbsolutePath().normalize();
     }
 
-    /** @return содержимое файла или {@code null}, если его нет, он пуст или не читается */
+    /**
+     * @return содержимое файла или {@code null}, если его нет, он пуст или не читается
+     */
     public @Nullable String load() {
         Path file = workspaceRoot.resolve(MEMORY_FILE);
         if (!Files.isRegularFile(file)) {
@@ -35,7 +37,7 @@ public class ProjectMemoryLoader {
             }
             return content.length() <= MAX_CHARS
                     ? content
-                    : content.substring(0, MAX_CHARS) + "\n… (обрезано)";
+                    : content.substring(0, MAX_CHARS) + "\n… (truncated)";
         } catch (IOException cannotRead) {
             return null;
         }

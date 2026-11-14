@@ -1,6 +1,6 @@
 package com.harness.context;
 
-import com.harness.agent.AgentProperties;
+import com.harness.agent.property.AgentProperty;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
@@ -29,15 +29,15 @@ public class ContextManager {
     private @Nullable String cached;
 
 
-    public ContextManager(GitStatusProvider gitStatusProvider, ProjectMemoryLoader projectMemoryLoader, SystemPromptBuilder systemPromptBuilder, AgentProperties properties) {
+    public ContextManager(GitStatusProvider gitStatusProvider, ProjectMemoryLoader projectMemoryLoader, SystemPromptBuilder systemPromptBuilder, AgentProperty properties) {
         this.gitStatusProvider = gitStatusProvider;
         this.projectMemoryLoader = projectMemoryLoader;
         this.systemPromptBuilder = systemPromptBuilder;
-        this.workspaceRoot = Path.of(properties.workspaceRoot()).toAbsolutePath().normalize();
+        this.workspaceRoot = Path.of(properties.workingDirectory()).toAbsolutePath().normalize();
     }
 
     public String systemPrompt() {
-        if(cached == null){
+        if (cached == null) {
             cached = systemPromptBuilder.build(dynamicContext());
         }
         return cached;
@@ -71,11 +71,6 @@ public class ContextManager {
                 Today: %s"""
                 .formatted(workspaceRoot, System.getProperty("os.name"), LocalDate.now());
     }
-
-
-
-
-
 
 
 }

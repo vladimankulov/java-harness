@@ -1,7 +1,9 @@
 package com.harness.agent;
 
 import com.harness.agent.event.AgentEvent;
-import com.harness.tool.Tool;
+import com.harness.tooling.Tool;
+import fixtures.RecordingEventPublisher;
+import fixtures.TestAgents;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.springframework.ai.chat.model.ChatModel;

@@ -1,10 +1,11 @@
 package com.harness.context;
 
-import com.harness.tool.FileStateCache;
-import com.harness.tool.Tool;
-import com.harness.tool.ToolContext;
-import com.harness.tool.ToolRegistry;
-import com.harness.tool.ToolResult;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.Tool;
+import com.harness.tooling.ToolRegistry;
+import com.harness.tooling.guard.FileStateGuard;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -17,7 +18,9 @@ class SystemPromptBuilderTest {
     private static final ApplicationEventPublisher БЕЗ_СОБЫТИЙ = event -> {
     };
 
-    /** Инструмент-пустышка: промпту нужны только имя и первая строка описания. */
+    /**
+     * Инструмент-пустышка: промпту нужны только имя и первая строка описания.
+     */
     static class FakeTool implements Tool<String> {
         @Override
         public String name() {
@@ -42,8 +45,8 @@ class SystemPromptBuilderTest {
 
     private SystemPromptBuilder builder(boolean personality) {
         ToolRegistry registry =
-                new ToolRegistry(List.of(new FakeTool()), БЕЗ_СОБЫТИЙ, new FileStateCache());
-        return new SystemPromptBuilder(registry, new com.harness.agent.AgentProperties(20, ".", personality));
+                new ToolRegistry(List.of(new FakeTool()), БЕЗ_СОБЫТИЙ, new FileStateGuard());
+        return new SystemPromptBuilder(registry, new AgentProperty(20, ".", personality));
     }
 
     @Test
@@ -78,7 +81,9 @@ class SystemPromptBuilderTest {
                 .doesNotContain("Usage: ...");
     }
 
-    /** Главный тезис урока: характер — это данные, а не код. */
+    /**
+     * Главный тезис урока: характер — это данные, а не код.
+     */
     @Test
     void характерЭтоОднаСекцияКоторуюМожноВыключить() {
         assertThat(builder(true).build(List.of())).contains("T-800");
