@@ -1,9 +1,14 @@
 package com.harness.tool.impl;
 
-import com.harness.tool.ToolContext;
-import com.harness.tool.WorkspaceGuard;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.GlobTool;
 import com.harness.tooling.impl.GrepTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -12,19 +17,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 class GlobToolTest {
 
     @TempDir
     Path workspace;
 
     private final ToolContext context =
-            com.harness.TestPermissionConfig.context(new FileStateCache());
+            TestPermissionConfig.context(new FileStateGuard());
 
     private GlobTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new GlobTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString(), true)));
+        tool = new GlobTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult glob(String pattern, String path) {
@@ -110,8 +117,8 @@ class GlobToolTest {
 
     @Test
     void выходЗаРабочуюПапкуЗапрещён() {
-        var decision = tool.checkPermissions(new GlobTool.Input("*.java", ".."), context);
-        assertThat(decision.behavior()).isEqualTo(com.harness.permission.PermissionBehavior.ASK);
+        var decision = tool.checkPermission(new GlobTool.Input("*.java", ".."), context);
+        assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
         assertThat(decision.reason()).contains("outside of the working directory");
     }
 

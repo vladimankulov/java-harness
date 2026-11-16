@@ -8,10 +8,8 @@ import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.permission.enums.PermissionMode;
 import com.harness.model.permission.enums.PermissionSource;
 import com.harness.tooling.guard.WorkspaceGuard;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import org.jspecify.annotations.Nullable;
+import org.springframework.util.StringUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,7 +85,7 @@ public final class PathInspector {
 
     }
 
-    private List<PermissionUpdate> suggestions(Path path, boolean write, boolean inside) {
+    private static List<PermissionUpdate> suggestions(Path path, boolean write, boolean inside) {
         List<PermissionUpdate> suggestions = new ArrayList<>();
         Path directory = Files.isDirectory(path) ? path : path.getParent();
         if (directory == null || directory.getParent() == null || directory.toString().matches(".*[.?].*")) {

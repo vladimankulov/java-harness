@@ -3,11 +3,15 @@ package com.harness.permission;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.harness.TestPermissionConfig;
-import com.harness.agent.AgentProperties;
-import com.harness.tool.*;
-import com.harness.tool.impl.*;
-
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.PermissionRule;
+import com.harness.model.permission.ToolPermissionContext;
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.permission.enums.PermissionMode;
+import com.harness.model.permission.enums.PermissionSource;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,7 +24,7 @@ class PathInspectorTest {
     @TempDir Path root;
 
     private WorkspaceGuard guard() {
-        return new WorkspaceGuard(new AgentProperties(20, root.toString(), true));
+        return new WorkspaceGuard(new AgentProperty(20, root.toString(), true));
     }
 
     private void directoryLink(Path link, Path target) throws Exception {
@@ -39,7 +43,7 @@ class PathInspectorTest {
         return TestPermissionConfig.setup(
                 TestPermissionConfig.properties(PermissionMode.DEFAULT, List.of(), deny, List.of()),
                 guard(),
-                new FileStateCache());
+                new FileStateGuard());
     }
 
     @Test
@@ -57,7 +61,7 @@ class PathInspectorTest {
                         new PermissionRule("Read", outside),
                         PermissionBehavior.ALLOW, PermissionSource.SESSION));
         // Запись внутри проекта: правило Edit на каталог файла, рабочую область расширять не нужно.
-        String inside = "//" + guard().root().resolve("src").toString().replace('\\', '/') + "/**";
+        String inside = "//" + guard().getRoot().resolve("src").toString().replace('\\', '/') + "/**";
         assertThat(PathInspector.checkWrite(guard(), "src/App.java", permissions).suggestions())
                 .containsExactly(PermissionUpdate.rule(
                         new PermissionRule("Edit", inside),
@@ -86,7 +90,7 @@ class PathInspectorTest {
             var s = TestPermissionConfig.setup(
                     TestPermissionConfig.properties(PermissionMode.ACCEPT_EDITS, List.of(), List.of(), List.of()),
                     guard(),
-                    new FileStateCache());
+                    new FileStateGuard());
             var decision = PathInspector.checkWrite(guard(), "link/new.txt", s.context().permissions());
             assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
             assertThat(outside.resolve("new.txt")).doesNotExist();

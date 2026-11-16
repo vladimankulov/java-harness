@@ -2,6 +2,10 @@ package com.harness.permission;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.harness.model.permission.PermissionDecision;
+import com.harness.model.permission.PermissionRule;
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.permission.enums.PermissionSource;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;

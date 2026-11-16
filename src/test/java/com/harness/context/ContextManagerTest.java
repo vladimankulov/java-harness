@@ -1,6 +1,6 @@
 package com.harness.context;
 
-import com.harness.TestPermissionConfig;
+import fixtures.TestPermissionConfig;
 import com.harness.agent.property.AgentProperty;
 import com.harness.tooling.ToolRegistry;
 import com.harness.tooling.guard.FileStateGuard;
@@ -27,7 +27,7 @@ class ContextManagerTest {
     private ContextManager manager() {
         AgentProperty properties = new AgentProperty(20, folder.toString(), true);
         ToolRegistry registry =
-                com.harness.TestPermissionConfig.registry(
+                TestPermissionConfig.registry(
                         List.of(),
                         event -> {},
                         new FileStateGuard(),

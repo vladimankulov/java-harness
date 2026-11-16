@@ -1,23 +1,22 @@
 package com.harness.agent;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.TestPermissionConfig;
+import com.harness.agent.property.AgentProperty;
+import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
 import com.harness.context.ContextManager;
 import com.harness.context.GitStatusProvider;
 import com.harness.context.ProjectMemoryLoader;
 import com.harness.context.SystemPromptBuilder;
-import com.harness.permission.PermissionMode;
+import com.harness.model.permission.enums.PermissionMode;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
 import com.harness.permission.PermissionPrompt;
-import com.harness.permission.PermissionProperties;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.SpringAiToolAdapter;
-import com.harness.tool.Tool;
-import com.harness.tool.ToolContext;
-import com.harness.tool.ToolRegistry;
-import com.harness.tool.ToolResult;
-import com.harness.tool.impl.BashTool;
-
+import com.harness.tooling.Tool;
+import com.harness.tooling.ToolRegistry;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.BashTool;
+import fixtures.RecordingEventPublisher;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.model.ChatModel;
@@ -31,18 +30,24 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Живая миссия: настоящий Maven запускается только после явного тестового согласия. */
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Живая миссия: настоящий Maven запускается только после явного тестового согласия.
+ */
 @Tag("ollama")
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestPermissionConfig.class)
 class BashMissionOllamaTest {
-    @Autowired private ChatModel chatModel;
-    @Autowired private List<Tool<?>> tools;
+    @Autowired
+    private ChatModel chatModel;
+    @Autowired
+    private List<Tool<?>> tools;
 
     @Test
     void запускаетБыстрыеТестыПослеПодтверждения() {
-        AgentProperties properties = new AgentProperties(6, ".", true);
+        AgentProperty properties = new AgentProperty(6, ".", true);
         RecordingEventPublisher events = new RecordingEventPublisher();
         AtomicReference<ToolResult> executed = new AtomicReference<>();
         AtomicInteger confirmations = new AtomicInteger();
@@ -50,7 +55,7 @@ class BashMissionOllamaTest {
                 new ArrayList<>(
                         tools.stream().filter(tool -> !tool.name().equals("Bash")).toList());
         missionTools.add(
-                new BashTool(new com.harness.tool.WorkspaceGuard(properties)) {
+                new BashTool(new WorkspaceGuard(properties)) {
                     @Override
                     public ToolResult call(Input input, ToolContext context) {
                         ToolResult result = super.call(input, context);
@@ -59,8 +64,8 @@ class BashMissionOllamaTest {
                     }
                 });
         // Проверка запуска тестов не должна давать модели возможность менять исходники.
-        PermissionProperties permissions =
-                com.harness.TestPermissionConfig.properties(
+        com.harness.config.property.PermissionProperty permissions =
+                TestPermissionConfig.properties(
                         PermissionMode.DEFAULT, List.of(), List.of("Edit", "Write"), List.of());
         PermissionPrompt prompt =
                 (name, target, reason) -> {
@@ -71,8 +76,8 @@ class BashMissionOllamaTest {
                     return PermissionPrompt.Answer.DENY;
                 };
         ToolRegistry registry =
-                com.harness.TestPermissionConfig.registry(
-                        missionTools, events, new FileStateCache(), permissions, prompt);
+                TestPermissionConfig.registry(
+                        missionTools, events, new FileStateGuard(), permissions, prompt);
         ContextManager context =
                 new ContextManager(
                         new GitStatusProvider(properties),
@@ -84,7 +89,7 @@ class BashMissionOllamaTest {
                         chatModel,
                         events,
                         registry,
-                        new SpringAiToolAdapter(registry),
+                        new SpringAiToolCallbackAdapter(registry),
                         properties,
                         context);
 

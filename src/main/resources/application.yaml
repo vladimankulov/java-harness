@@ -21,7 +21,7 @@ harness:
     working-directory: "."
     personality-enabled: false
   permission:
-    mode: accept_edits
+    mode: default
 
 logging:
   level:

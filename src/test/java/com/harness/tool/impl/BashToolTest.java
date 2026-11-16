@@ -2,13 +2,14 @@ package com.harness.tool.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.harness.agent.AgentProperties;
-import com.harness.permission.PermissionBehavior;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.ToolContext;
-import com.harness.tool.WorkspaceGuard;
-import com.harness.tool.ToolResult;
-
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.BashTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -17,15 +18,16 @@ import java.nio.file.Path;
 
 class BashToolTest {
 
-    @TempDir Path workspace;
+    @TempDir
+    Path workspace;
 
     private BashTool tool;
     private final ToolContext context =
-            com.harness.TestPermissionConfig.context(new FileStateCache());
+            TestPermissionConfig.context(new FileStateGuard());
 
     @BeforeEach
     void setUp() {
-        tool = new BashTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString(), true)));
+        tool = new BashTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult run(String command) {
@@ -33,7 +35,7 @@ class BashToolTest {
     }
 
     private PermissionBehavior behaviorFor(String command) {
-        return tool.checkPermissions(new BashTool.Input(command, null, null), context).behavior();
+        return tool.checkPermission(new BashTool.Input(command, null, null), context).behavior();
     }
 
     @Test
@@ -41,7 +43,7 @@ class BashToolTest {
         ToolResult result = run("echo привет");
 
         assertThat(result.error()).isFalse();
-        assertThat(result.content()).contains("привет").contains("код возврата: 0");
+        assertThat(result.content()).contains("привет").contains("exitCode: 0");
     }
 
     @Test
@@ -50,7 +52,7 @@ class BashToolTest {
         ToolResult result = run("exit 3");
 
         assertThat(result.error()).isFalse();
-        assertThat(result.content()).contains("код возврата: 3");
+        assertThat(result.content()).contains("exitCode: 3");
     }
 
     @Test
@@ -76,12 +78,12 @@ class BashToolTest {
                         : "sleep 20";
         // Работаем не в @TempDir: убитый процесс какое-то время держит рабочую папку,
         // и JUnit не может её удалить после теста.
-        BashTool inProject = new BashTool(new WorkspaceGuard(new AgentProperties(20, ".", true)));
+        BashTool inProject = new BashTool(new WorkspaceGuard(new AgentProperty(20, ".", true)));
 
         ToolResult result = inProject.call(new BashTool.Input(sleep, null, 1), context);
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("не уложилась");
+        assertThat(result.content()).contains("was interrupted");
     }
 
     @Test
@@ -111,7 +113,7 @@ class BashToolTest {
                         ? "where where"
                         : "which ls";
 
-        assertThat(run(systemCommand).content()).contains("код возврата: 0");
+        assertThat(run(systemCommand).content()).contains("exitCode: 0");
     }
 
     @Test
@@ -122,15 +124,15 @@ class BashToolTest {
                         // Двойной процент: команда уезжает в оболочку файлом-скриптом,
                         // а в batch-файле переменная цикла пишется как %%i.
                         ? "for /l %%i in (1,1,4000) do @echo"
-                                + " ____________________________________________________________"
+                        + " ____________________________________________________________"
                         : "for i in $(seq 1 4000); do echo"
-                                + " ____________________________________________________________;"
-                                + " done";
+                        + " ____________________________________________________________;"
+                        + " done";
 
         ToolResult result = run(many);
 
-        assertThat(result.content().length()).isLessThan(BashTool.MAX_OUTPUT_CHARS + 200);
-        assertThat(result.content()).contains("начало вывода обрезано");
+        assertThat(result.content().length()).isLessThan(BashTool.MAX_OUTPUT_CHARACTERS + 200);
+        assertThat(result.content()).contains("truncated");
     }
 
     @Test
@@ -157,14 +159,14 @@ class BashToolTest {
         // Причину увидит пользователь в запросе подтверждения — «нельзя, потому что»
         // работает лучше, чем просто «нельзя».
         assertThat(
-                        tool.checkPermissions(
-                                        new BashTool.Input("rm -rf build", null, null), context)
-                                .reason())
+                tool.checkPermission(
+                                new BashTool.Input("rm -rf build", null, null), context)
+                        .reason())
                 .contains("необратимая операция");
         assertThat(
-                        tool.checkPermissions(
-                                        new BashTool.Input("mvnw package", null, null), context)
-                                .reason())
+                tool.checkPermission(
+                                new BashTool.Input("mvnw package", null, null), context)
+                        .reason())
                 .contains("выполнение команды");
     }
 

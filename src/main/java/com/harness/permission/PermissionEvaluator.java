@@ -13,9 +13,9 @@ import java.util.List;
 
 @Service
 public class PermissionEvaluator {
-    private final OrdersKeeper ordersKeeper;
+    private final OrderKeeper ordersKeeper;
 
-    public PermissionEvaluator(OrdersKeeper ordersKeeper) {
+    public PermissionEvaluator(OrderKeeper ordersKeeper) {
         this.ordersKeeper = ordersKeeper;
     }
 

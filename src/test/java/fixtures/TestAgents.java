@@ -1,6 +1,5 @@
 package fixtures;
 
-import com.harness.TestPermissionConfig;
 import com.harness.agent.Agent;
 import com.harness.agent.property.AgentProperty;
 import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
@@ -18,7 +17,7 @@ import java.util.List;
 /**
  * Сборка агента для тестов: без Spring-контекста и без сети.
  */
-final class TestAgents {
+public final class TestAgents {
 
     private TestAgents() {
     }
@@ -33,7 +32,7 @@ final class TestAgents {
             AgentProperty properties,
             Tool<?>... tools) {
         ToolRegistry registry =
-                com.harness.TestPermissionConfig.registry(
+                TestPermissionConfig.registry(
                         List.of(tools),
                         events,
                         new FileStateGuard(),

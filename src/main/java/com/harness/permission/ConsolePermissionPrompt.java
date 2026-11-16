@@ -1,5 +1,7 @@
 package com.harness.permission;
 
+import com.harness.model.permission.PermissionDecision;
+import com.harness.model.permission.enums.PermissionSource;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -36,12 +38,15 @@ public class ConsolePermissionPrompt implements PermissionPrompt {
         Answer answer = parse(readLine());
         return (answer == Answer.ALLOW_ALWAYS && remember == null) ? Answer.DENY : answer;
     }
+
     private static @Nullable String describeAll(List<PermissionUpdate> suggestions) {
         if (suggestions.isEmpty()) return null;
         return suggestions.stream().map(ConsolePermissionPrompt::describe).collect(Collectors.joining(" + "));
     }
 
-    /** Строка для человека: что изменится и надолго ли. */
+    /**
+     * Строка для человека: что изменится и надолго ли.
+     */
     static String describe(PermissionUpdate update) {
         String scope = update.destination() == PermissionSource.SESSION
                 ? "на сессию"
@@ -60,7 +65,9 @@ public class ConsolePermissionPrompt implements PermissionPrompt {
         output.flush();
     }
 
-    /** null — ввода нет: stdin закрыт или чтение упало. Это не должно превратиться в разрешение. */
+    /**
+     * null — ввода нет: stdin закрыт или чтение упало. Это не должно превратиться в разрешение.
+     */
     private @Nullable String readLine() {
         try {
             String line = input.readLine();
@@ -72,7 +79,9 @@ public class ConsolePermissionPrompt implements PermissionPrompt {
         }
     }
 
-    /** Неизвестное слово, пустая строка, отсутствие ввода и n означают отказ. */
+    /**
+     * Неизвестное слово, пустая строка, отсутствие ввода и n означают отказ.
+     */
     private static Answer parse(@Nullable String line) {
         if (line == null) return Answer.DENY;
         return switch (line.strip().toLowerCase(Locale.ROOT)) {
@@ -82,14 +91,3 @@ public class ConsolePermissionPrompt implements PermissionPrompt {
         };
     }
 }
-
-
-
-
-
-
-
-
-
-
-

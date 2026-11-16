@@ -8,6 +8,7 @@ import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.permission.enums.PermissionMode;
 import com.harness.model.permission.enums.PermissionSource;
 import com.harness.tooling.guard.WorkspaceGuard;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -117,7 +118,7 @@ public class OrderCollector {
 
     }
 
-    private List<String> strings(Object o) {
+    private List<String> strings(@Nullable Object o) {
         if (o == null) {
             return List.of();
         }

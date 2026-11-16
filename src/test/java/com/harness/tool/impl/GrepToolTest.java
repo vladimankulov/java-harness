@@ -1,9 +1,13 @@
 package com.harness.tool.impl;
 
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.GrepTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,13 +25,13 @@ class GrepToolTest {
     Path workspace;
 
     private final ToolContext context =
-            com.harness.TestPermissionConfig.context(new FileStateCache());
+            TestPermissionConfig.context(new FileStateGuard());
 
     private GrepTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new GrepTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString(), true)));
+        tool = new GrepTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult grep(String pattern, GrepTool.OutputMode mode) {
@@ -97,9 +101,6 @@ class GrepToolTest {
         assertThat(result.content()).doesNotContain("Agent.md");
     }
 
-    /**
-     * Поправка на {@code **}{@code /} живёт в {@link GlobTool#matcherFor} и работает здесь тоже.
-     */
     @Test
     void шаблонСоЗвёздочкамиНаходитИФайлВКорне() throws IOException {
         create("Root.java", "class Agent {}\n");
@@ -157,8 +158,8 @@ class GrepToolTest {
     @Test
     void выходЗаРабочуюПапкуЗапрещён() {
         var decision =
-                tool.checkPermissions(new GrepTool.Input("x", "..", null, null, null), context);
-        assertThat(decision.behavior()).isEqualTo(com.harness.permission.PermissionBehavior.ASK);
+                tool.checkPermission(new GrepTool.Input("x", "..", null, null, null), context);
+        assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
         assertThat(decision.reason()).contains("outside of the working directory");
     }
 

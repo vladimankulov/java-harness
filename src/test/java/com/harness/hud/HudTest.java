@@ -2,7 +2,13 @@ package com.harness.hud;
 
 import com.harness.agent.Agent;
 import com.harness.agent.event.AgentEvent;
+import com.harness.agent.property.AgentProperty;
+import com.harness.config.property.PermissionProperty;
 import com.harness.model.conversation.Conversation;
+import com.harness.model.permission.enums.PermissionMode;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.BashTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -13,6 +19,9 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 
 class HudTest {
 
@@ -34,8 +43,8 @@ class HudTest {
                                 new PrintStream(buffer, true, StandardCharsets.UTF_8)),
                         agent,
                         List.of(),
-                        com.harness.TestPermissionConfig.evaluator(
-                                com.harness.TestPermissionConfig.permissive()));
+                        TestPermissionConfig.evaluator(
+                                TestPermissionConfig.permissive()));
     }
 
     private String output() {
@@ -101,11 +110,10 @@ class HudTest {
 
     @Test
     void вооружениеПомечаетсяLockedПоРежимуСервиса() {
-        var properties = new com.harness.agent.AgentProperties(20, ".", true);
+        var properties = new AgentProperty(20, ".", true);
         var permissions =
-                com.harness.TestPermissionConfig.evaluator(
-                        new com.harness.permission.PermissionProperties(
-                                com.harness.permission.PermissionMode.ACCEPT_EDITS,
+                TestPermissionConfig.evaluator(
+                        new PermissionProperty(PermissionMode.ACCEPT_EDITS,
                                 List.of(),
                                 List.of(),
                                 List.of(),
@@ -115,7 +123,7 @@ class HudTest {
                         new MachineViewPrinter(
                                 new PrintStream(buffer, true, StandardCharsets.UTF_8)),
                         agent,
-                        List.of(new com.harness.tool.impl.BashTool(new com.harness.tool.WorkspaceGuard(properties))),
+                        List.of(new BashTool(new WorkspaceGuard(properties))),
                         permissions);
         List<BootLine> lines =
                 org.springframework.test.util.ReflectionTestUtils.invokeMethod(
@@ -129,15 +137,15 @@ class HudTest {
 
     @Test
     void bypassСнимаетОбычнуюБлокировкуВBootЛоге() {
-        var properties = new com.harness.agent.AgentProperties(20, ".", true);
+        var properties = new AgentProperty(20, ".", true);
         Hud monitor =
                 new Hud(
                         new MachineViewPrinter(
                                 new PrintStream(buffer, true, StandardCharsets.UTF_8)),
                         agent,
-                        List.of(new com.harness.tool.impl.BashTool(new com.harness.tool.WorkspaceGuard(properties))),
-                        com.harness.TestPermissionConfig.evaluator(
-                                com.harness.TestPermissionConfig.permissive()));
+                        List.of(new BashTool(new WorkspaceGuard(properties))),
+                        TestPermissionConfig.evaluator(
+                                TestPermissionConfig.permissive()));
         List<BootLine> lines =
                 org.springframework.test.util.ReflectionTestUtils.invokeMethod(
                         monitor, "collectBootLines", 160);

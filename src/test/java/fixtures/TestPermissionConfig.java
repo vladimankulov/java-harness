@@ -1,16 +1,25 @@
-package com.harness;
+package fixtures;
 
-import com.harness.agent.AgentProperties;
+import com.harness.agent.property.AgentProperty;
+import com.harness.config.property.PermissionProperty;
+import com.harness.model.permission.enums.PermissionMode;
+import com.harness.model.permission.enums.PermissionSource;
+import com.harness.model.tooling.ToolContext;
 import com.harness.permission.*;
-import com.harness.tool.*;
-
+import com.harness.tooling.Tool;
+import com.harness.tooling.ToolRegistry;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
-/** Ручная сборка той же цепочки для тестов, без чтения личных настроек преподавателя. */
+/**
+ * Ручная сборка той же цепочки для тестов, без чтения личных настроек преподавателя.
+ */
 @TestConfiguration
 public class TestPermissionConfig {
     @Bean
@@ -22,29 +31,29 @@ public class TestPermissionConfig {
         return (tool, target, reason) -> PermissionPrompt.Answer.ALLOW_ONCE;
     }
 
-    public static PermissionProperties permissive() {
+    public static PermissionProperty permissive() {
         return properties(PermissionMode.BYPASS_PERMISSIONS, List.of(), List.of(), List.of());
     }
 
-    public static PermissionProperties properties(
+    public static PermissionProperty properties(
             PermissionMode mode, List<String> allow, List<String> deny, List<String> ask) {
-        return new PermissionProperties(mode, allow, deny, ask, List.of());
+        return new PermissionProperty(mode, allow, deny, ask, List.of());
     }
 
-    public static ToolContext context(FileStateCache cache) {
-        var guard = new WorkspaceGuard(new AgentProperties(20, ".", true));
-        var collector = new OrdersCollector(
-                properties(PermissionMode.DEFAULT, List.of(), List.of(), List.of()), guard, Map.of());
-        return new ToolContext(cache, new OrdersKeeper(collector, guard));
+    public static ToolContext context(FileStateGuard cache) {
+        var guard = new WorkspaceGuard(new AgentProperty(20, ".", true));
+        var collector = new OrderCollector(guard, properties(PermissionMode.DEFAULT, List.of(), List.of(), List.of()), Map.of());
+        return new ToolContext(cache, new OrderKeeper(collector, guard));
     }
 
     public record Setup(
-            ToolContext context, PermissionEvaluator evaluator, OrdersKeeper orders) {}
+            ToolContext context, PermissionEvaluator evaluator, OrderKeeper orders) {
+    }
 
-    public static Setup setup(PermissionProperties p, WorkspaceGuard guard, FileStateCache cache) {
+    public static Setup setup(PermissionProperty p, WorkspaceGuard guard, FileStateGuard cache) {
         // Свои временные файлы user/project/local: «запомнить» пишет в local, личные настройки не читаем и не трогаем.
-        var collector = new OrdersCollector(p, guard, temporaryOrdersFiles());
-        var orders = new OrdersKeeper(collector, guard);
+        var collector = new OrderCollector(guard, p, temporaryOrdersFiles());
+        var orders = new OrderKeeper(collector, guard);
         return new Setup(
                 new ToolContext(cache, orders),
                 new PermissionEvaluator(orders),
@@ -67,21 +76,21 @@ public class TestPermissionConfig {
         }
     }
 
-    public static PermissionEvaluator evaluator(PermissionProperties p) {
+    public static PermissionEvaluator evaluator(PermissionProperty p) {
         return setup(
-                        p,
-                        new WorkspaceGuard(new AgentProperties(20, ".", true)),
-                        new FileStateCache())
+                p,
+                new WorkspaceGuard(new AgentProperty(20, ".", true)),
+                new FileStateGuard())
                 .evaluator();
     }
 
     public static ToolRegistry registry(
             List<Tool<?>> tools,
             ApplicationEventPublisher events,
-            FileStateCache cache,
-            PermissionProperties p,
+            FileStateGuard cache,
+            PermissionProperty p,
             PermissionPrompt prompt) {
-        var setup = setup(p, new WorkspaceGuard(new AgentProperties(20, ".", true)), cache);
+        var setup = setup(p, new WorkspaceGuard(new AgentProperty(20, ".", true)), cache);
         return new ToolRegistry(
                 tools,
                 events,

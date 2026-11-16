@@ -1,6 +1,6 @@
 package com.harness.context;
 
-import com.harness.TestPermissionConfig;
+import fixtures.TestPermissionConfig;
 import com.harness.agent.property.AgentProperty;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
@@ -43,7 +43,7 @@ class SystemPromptBuilderTest {
 
     private SystemPromptBuilder builder(boolean personality) {
         ToolRegistry registry =
-                com.harness.TestPermissionConfig.registry(
+                TestPermissionConfig.registry(
                         List.of(new FakeTool()),
                         БЕЗ_СОБЫТИЙ,
                         new FileStateGuard(),

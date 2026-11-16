@@ -1,10 +1,11 @@
 package com.harness.tooling;
 
 import com.harness.agent.event.AgentEvent;
+import com.harness.model.permission.PermissionDecision;
+import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
-import com.harness.tooling.guard.FileStateGuard;
-import org.springframework.ai.chat.messages.AssistantMessage;
+import com.harness.permission.PermissionGate;
 import org.springframework.ai.util.JsonHelper;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -12,7 +13,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,11 +21,13 @@ import java.util.Map;
 public class ToolRegistry {
 
     private final JsonHelper jsonHelper = new JsonHelper();
-    private final Map<String, Tool<?>> availableTools = new HashMap<>();
+    private final Map<String, Tool<?>> availableTools = new LinkedHashMap<>();
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ToolContext toolContext;
+    private final PermissionGate permissionGate;
 
-    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher, ToolContext toolContext) {
+
+    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher, ToolContext toolContext, PermissionGate permissionGate) {
         for (Tool<?> tool : tools) {
             Tool<?> existence = availableTools.put(tool.name(), tool);
             if (existence != null) {
@@ -33,6 +36,7 @@ public class ToolRegistry {
         }
         this.applicationEventPublisher = applicationEventPublisher;
         this.toolContext = toolContext;
+        this.permissionGate = permissionGate;
     }
 
     public List<Tool<?>> tools() {
@@ -64,10 +68,15 @@ public class ToolRegistry {
         } catch (Exception e) {
             return ToolResult.error("Failed to read arguments for tool: %s, expected: %s, err: %s".formatted(tool.name(), tool.inputSchema(), e.getMessage()));
         }
+        if (input == null) return ToolResult.error("you didn't specify input variables");
         try {
+            PermissionDecision decision = permissionGate.authorize(tool, input, toolContext);
+            if (decision.behavior() != PermissionBehavior.ALLOW) {
+                return ToolResult.error("call is forbidden: " + decision.reason());
+            }
             return tool.call(input, toolContext);
         } catch (Exception e) {
-            return ToolResult.error("Failed to execute the tool: %s, err: %s".formatted(tool.name(), e.getMessage()));
+            return ToolResult.error("%s упал: %s".formatted(tool.name(), e));
         }
     }
 

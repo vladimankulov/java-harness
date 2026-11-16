@@ -2,11 +2,19 @@ package com.harness.permission;
 
 import static org.assertj.core.api.Assertions.*;
 
-import com.harness.TestPermissionConfig;
-import com.harness.agent.AgentProperties;
-import com.harness.tool.*;
-import com.harness.tool.impl.*;
-
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.PermissionDecision;
+import com.harness.model.permission.PermissionRule;
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.permission.enums.PermissionMode;
+import com.harness.model.permission.enums.PermissionSource;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.Tool;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.*;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -34,7 +42,7 @@ class PermissionEvaluatorTest {
     @TempDir Path root;
 
     private WorkspaceGuard guard() {
-        return new WorkspaceGuard(new AgentProperties(20, root.toString(), true));
+        return new WorkspaceGuard(new AgentProperty(20, root.toString(), true));
     }
 
     private TestPermissionConfig.Setup setup(
@@ -42,7 +50,7 @@ class PermissionEvaluatorTest {
         return TestPermissionConfig.setup(
                 TestPermissionConfig.properties(mode, allow, deny, ask),
                 guard(),
-                new FileStateCache());
+                new FileStateGuard());
     }
 
     private PermissionDecision bash(TestPermissionConfig.Setup s, String command) {
@@ -253,7 +261,7 @@ class PermissionEvaluatorTest {
         var s = setup(PermissionMode.DEFAULT, List.of(), List.of(), List.of());
         assertThat(edit(s, "App.java").behavior()).isEqualTo(PermissionBehavior.ASK);
         s.orders().apply(PermissionUpdate.rule(
-                new PermissionRule("Edit", "//" + guard().root().toString().replace('\\', '/') + "/**"),
+                new PermissionRule("Edit", "//" + guard().getRoot().toString().replace('\\', '/') + "/**"),
                 PermissionBehavior.ALLOW,
                 PermissionSource.SESSION));
         assertThat(edit(s, "App.java").behavior()).isEqualTo(PermissionBehavior.ALLOW);
@@ -265,7 +273,7 @@ class PermissionEvaluatorTest {
         Path outside = root.resolveSibling(root.getFileName() + "-outside");
         assertThat(
                         new FileReadTool(guard())
-                                .checkPermissions(
+                                .checkPermission(
                                         new FileReadTool.Input(
                                                 outside.resolve("x.txt").toString(), null, null),
                                         s.context())
@@ -274,7 +282,7 @@ class PermissionEvaluatorTest {
         s.orders().apply(PermissionUpdate.directory(outside.toString()));
         assertThat(
                         new FileReadTool(guard())
-                                .checkPermissions(
+                                .checkPermission(
                                         new FileReadTool.Input(
                                                 outside.resolve("x.txt").toString(), null, null),
                                         s.context())
@@ -286,7 +294,7 @@ class PermissionEvaluatorTest {
     void общийЗапретНеВызываетПроверкуИнструмента() {
         var s = setup(PermissionMode.DEFAULT, List.of(), List.of("Probe"), List.of());
         Tool<String> tool =
-                new Tool<>() {
+                new Tool<String>() {
                     public String name() {
                         return "Probe";
                     }

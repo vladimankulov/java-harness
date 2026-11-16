@@ -8,7 +8,7 @@ import java.util.List;
 
 @ConfigurationProperties("harness.permissions")
 public record PermissionProperty(
-        @DefaultValue(value = "ACCEPT_EDITS") PermissionMode mode,
+        @DefaultValue(value = "DEFAULT") PermissionMode mode,
         @DefaultValue(value = "{}") List<String> allow,
         @DefaultValue(value = "{}") List<String> deny,
         @DefaultValue(value = "{}") List<String> ask,

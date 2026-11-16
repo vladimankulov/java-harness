@@ -74,7 +74,7 @@ public final class CommandInspector {
 
     /** Ищем правило Bash нужного типа: точная строка или префикс с конечной *. null — такого нет. */
     private static @Nullable PermissionEntry findRule(String command, ToolPermissionContext context, PermissionBehavior behavior) {
-        return context.ruleEntries().stream()
+        return context.permissionEntries().stream()
                 .filter(e -> e.behavior() == behavior && e.rule().appliesTo("Bash") && e.rule().argumentPattern() != null)
                 .filter(e -> matches(command, e.rule().argumentPattern()))
                 .findFirst().orElse(null);

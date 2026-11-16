@@ -30,7 +30,7 @@ public class BashTool implements Tool<BashTool.Input> {
 
     private final WorkspaceGuard workspaceGuard;
 
-    private static final int MAX_OUTPUT_CHARACTERS = 8000;
+    public static final int MAX_OUTPUT_CHARACTERS = 8000;
     private static final int DEFAULT_TIMEOUT_PROCESS = 120;//seconds
     private static final int MAX_TIMEOUT_PROCESS = 600; //seconds
     private static final int MIN_TIMEOUT_PROCESS = 1; //seconds
@@ -62,7 +62,7 @@ public class BashTool implements Tool<BashTool.Input> {
 
     @Override
     public ToolResult call(Input input, ToolContext context) {
-        if (StringUtils.hasText(input.command)) {
+        if (!StringUtils.hasText(input.command)) {
             return ToolResult.error("command parameter is empty, provide it");
         }
         int timeout = input.timeoutSeconds == null ? DEFAULT_TIMEOUT_PROCESS : input.timeoutSeconds;
@@ -157,6 +157,10 @@ public class BashTool implements Tool<BashTool.Input> {
         return CommandInspector.check(input.command, context.permissions());
     }
 
+    public int getMaxOutputCharacters() {
+        return MAX_OUTPUT_CHARACTERS;
+    }
+
     public record Input(
             @ToolParam(description = "Shell command to execute")
             String command,
@@ -168,8 +172,9 @@ public class BashTool implements Tool<BashTool.Input> {
     ) {
     }
 
+
     private Process startProcess(Path script) throws IOException {
-        List<String> command = isWindows() ? List.of("cmd.exe", "/d", "/c") : List.of("/bin/sh");
+        List<String> command = isWindows() ? List.of("cmd.exe", "/d", "/c", script.toString()) : List.of("/bin/sh", script.toString());
         ProcessBuilder builder = new ProcessBuilder(command)
                 .directory(workspaceGuard.getRoot().toFile())
                 .redirectErrorStream(true);

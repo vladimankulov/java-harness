@@ -1,7 +1,7 @@
 package com.harness.agent;
 
 import org.springframework.context.annotation.Import;
-import com.harness.TestPermissionConfig;
+import fixtures.TestPermissionConfig;
 import com.harness.agent.event.AgentEvent;
 import com.harness.tooling.Tool;
 import fixtures.RecordingEventPublisher;
