@@ -1,7 +1,9 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.permission.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
@@ -92,6 +94,11 @@ public class FileWriteTool implements Tool<FileWriteTool.Input> {
   @Override
   public String renderToolUsage(FileWriteTool.Input input) {
     return Tool.super.renderToolUsage(input);
+  }
+
+  @Override
+  public PermissionDecision checkPermission(Input input, ToolContext context) {
+    return PathInspector.checkWrite(workspaceGuard, input.filePath, context.permissions());
   }
 
   public record Input(

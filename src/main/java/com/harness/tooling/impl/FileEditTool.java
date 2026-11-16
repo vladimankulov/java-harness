@@ -1,10 +1,13 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.permission.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -54,6 +57,11 @@ public class FileEditTool implements Tool<FileEditTool.Input> {
     @Override
     public String renderToolUsage(Input input) {
         return StringUtils.hasText(input.filePath) ? "Edit: %s".formatted(input.filePath) : "Edit";
+    }
+
+    @Override
+    public PermissionDecision checkPermission(FileEditTool.Input input, ToolContext context) {
+        return PathInspector.checkWrite(workspaceGuard, input.filePath, context.permissions());
     }
 
     @Override
@@ -131,6 +139,7 @@ public class FileEditTool implements Tool<FileEditTool.Input> {
             @ToolParam(description = "New text to replace with, whitespace included")
             String newString,
             @ToolParam(required = false, description = "Replace every occurrence instead of failing on duplicates")
+            @Nullable
             Boolean replaceAll
     ) {
 

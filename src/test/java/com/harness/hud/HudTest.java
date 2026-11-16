@@ -2,7 +2,7 @@ package com.harness.hud;
 
 import com.harness.agent.Agent;
 import com.harness.agent.event.AgentEvent;
-import com.harness.model.Conversation;
+import com.harness.model.conversation.Conversation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

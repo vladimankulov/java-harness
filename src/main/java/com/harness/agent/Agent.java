@@ -4,7 +4,7 @@ import com.harness.agent.event.AgentEvent;
 import com.harness.agent.property.AgentProperty;
 import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
 import com.harness.context.ContextManager;
-import com.harness.model.Conversation;
+import com.harness.model.conversation.Conversation;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.ToolRegistry;
 import org.jspecify.annotations.Nullable;

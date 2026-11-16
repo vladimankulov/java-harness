@@ -1,4 +1,4 @@
-package com.harness.model;
+package com.harness.model.conversation;
 
 import org.springframework.ai.chat.messages.*;
 import org.springframework.util.StringUtils;

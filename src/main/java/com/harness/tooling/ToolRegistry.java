@@ -24,7 +24,7 @@ public class ToolRegistry {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final ToolContext toolContext;
 
-    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher, FileStateGuard fileStateGuard) {
+    public ToolRegistry(List<Tool<?>> tools, ApplicationEventPublisher applicationEventPublisher, ToolContext toolContext) {
         for (Tool<?> tool : tools) {
             Tool<?> existence = availableTools.put(tool.name(), tool);
             if (existence != null) {
@@ -32,7 +32,7 @@ public class ToolRegistry {
             }
         }
         this.applicationEventPublisher = applicationEventPublisher;
-        this.toolContext = new ToolContext(fileStateGuard);
+        this.toolContext = toolContext;
     }
 
     public List<Tool<?>> tools() {

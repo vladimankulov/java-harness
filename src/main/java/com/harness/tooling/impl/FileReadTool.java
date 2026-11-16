@@ -1,13 +1,17 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.permission.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,10 +24,10 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
     private final static int MAX_LINE_LENGTH = 2000;
     private final static int DEFAULT_LINES_TO_READ = 2000;
 
-    private final WorkspaceGuard workSpaceGuard;
+    private final WorkspaceGuard workspaceGuard;
 
-    public FileReadTool(WorkspaceGuard workSpaceGuard) {
-        this.workSpaceGuard = workSpaceGuard;
+    public FileReadTool(WorkspaceGuard workspaceGuard) {
+        this.workspaceGuard = workspaceGuard;
     }
 
     @Override
@@ -51,9 +55,13 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
 
     @Override
     public ToolResult call(Input input, ToolContext context) {
+        if (StringUtils.hasText(input.filePath)) {
+            ToolResult.error("filePath is empty, fill it");
+        }
+
         Path toFile;
         try {
-            toFile = workSpaceGuard.resolve(input.filePath);
+            toFile = workspaceGuard.resolve(input.filePath);
         } catch (WorkspaceViolationException e) {
             return ToolResult.error(e.getMessage());
         }
@@ -94,12 +102,19 @@ public class FileReadTool implements Tool<FileReadTool.Input> {
         return name() + ":" + input.filePath;
     }
 
+    @Override
+    public PermissionDecision checkPermission(Input input, ToolContext context) {
+        return PathInspector.checkRead(workspaceGuard, input.filePath, context.permissions());
+    }
+
     public record Input(
             @ToolParam(description = "Path to file, relative to the project root")
             String filePath,
             @ToolParam(required = false, description = "1-based number line to start from")
+            @Nullable
             Integer offset,
             @ToolParam(required = false, description = "How many lines to read, default 2000")
+            @Nullable
             Integer limit
     ) {
     }
