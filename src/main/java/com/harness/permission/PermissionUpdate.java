@@ -12,18 +12,17 @@ public sealed interface PermissionUpdate {
     }
 
     record Directory(String path) implements PermissionUpdate {
-
         @Override
         public PermissionSource destination() {
             return PermissionSource.SESSION;
         }
     }
 
-    static Rule rule(PermissionRule rule, PermissionBehavior behavior, PermissionSource source) {
-        return new Rule(rule, behavior, source);
+    static PermissionUpdate rule(PermissionRule rule, PermissionBehavior behavior, PermissionSource destination) {
+        return new Rule(rule, behavior, destination);
     }
 
-    static Directory directory(String path) {
+    static PermissionUpdate directory(String path) {
         return new Directory(path);
     }
 }

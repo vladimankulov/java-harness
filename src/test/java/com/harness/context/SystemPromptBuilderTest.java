@@ -1,5 +1,6 @@
 package com.harness.context;
 
+import com.harness.TestPermissionConfig;
 import com.harness.agent.property.AgentProperty;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
@@ -15,12 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class SystemPromptBuilderTest {
 
-    private static final ApplicationEventPublisher БЕЗ_СОБЫТИЙ = event -> {
-    };
+    private static final ApplicationEventPublisher БЕЗ_СОБЫТИЙ = event -> {};
 
-    /**
-     * Инструмент-пустышка: промпту нужны только имя и первая строка описания.
-     */
+    /** Инструмент-пустышка: промпту нужны только имя и первая строка описания. */
     static class FakeTool implements Tool<String> {
         @Override
         public String name() {
@@ -45,8 +43,14 @@ class SystemPromptBuilderTest {
 
     private SystemPromptBuilder builder(boolean personality) {
         ToolRegistry registry =
-                new ToolRegistry(List.of(new FakeTool()), БЕЗ_СОБЫТИЙ, new FileStateGuard());
-        return new SystemPromptBuilder(registry, new AgentProperty(20, ".", personality));
+                com.harness.TestPermissionConfig.registry(
+                        List.of(new FakeTool()),
+                        БЕЗ_СОБЫТИЙ,
+                        new FileStateGuard(),
+                        TestPermissionConfig.permissive(),
+                        TestPermissionConfig.allowOnce());
+        return new SystemPromptBuilder(
+                registry, new AgentProperty(20, ".", personality));
     }
 
     @Test
@@ -81,9 +85,7 @@ class SystemPromptBuilderTest {
                 .doesNotContain("Usage: ...");
     }
 
-    /**
-     * Главный тезис урока: характер — это данные, а не код.
-     */
+    /** Главный тезис урока: характер — это данные, а не код. */
     @Test
     void характерЭтоОднаСекцияКоторуюМожноВыключить() {
         assertThat(builder(true).build(List.of())).contains("T-800");

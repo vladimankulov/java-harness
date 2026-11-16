@@ -11,6 +11,8 @@ import com.harness.tooling.guard.WorkspaceGuard;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import org.jspecify.annotations.Nullable;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,20 +20,37 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-@Component
-public class PathInspector {
-
-    private static final Set<String> PROTECTED_DIRS = Set.of();
-    private static final Set<String> PROTECTED_FILES = Set.of();
-
-    public static PermissionDecision checkRead(WorkspaceGuard guard, String rawPath, ToolPermissionContext context) {
-        return check(guard, rawPath, context, false);
+/**
+ * Инспектирует один путь по правилам. Read/Grep/Glob вызывают checkRead; Edit/Write — checkWrite;
+ * Bash проверяет здесь же пути своих аргументов.
+ * Порядок: сетевой путь → DENY → явный ASK → защита настроек → рабочие каталоги и режим → ALLOW → обычный ASK.
+ * Здесь работают только правила с путём: Read(src/**), Edit(.env). Правило на весь инструмент
+ * (Read, Edit, Grep) проверяет PermissionEvaluator по имени инструмента.
+ * Чтение подчиняется правилам Read, запись — правилам Edit; Write пишет по правилам Edit.
+ * BYPASS здесь не учитываем: обычный ASK снимет PermissionEvaluator, а защиту настроек режим не снимает.
+ * rawPath — путь из Input, например src/App.java; подпись "[EDIT] src/App.java" сюда не передаём.
+ */
+public final class PathInspector {
+    private PathInspector() {
     }
 
-    public static PermissionDecision checkWrite(WorkspaceGuard guard, String rawPath, ToolPermissionContext context) {
-        return check(guard, rawPath, context, true);
+    // Эти каталоги содержат настройки: обычного ALLOW и режима на запись в них недостаточно.
+    private static final Set<String> PROTECTED_DIRECTORIES = Set.of(".git", ".idea", ".vscode", ".claude", ".harness", ".mvn", ".husky", ".cargo", ".devcontainer", ".yarn");
+    // Эти файлы тоже считаем настройками, даже если они лежат вне служебного каталога.
+    private static final Set<String> PROTECTED_FILES = Set.of(
+            ".gitconfig", ".gitmodules", ".bashrc", ".bash_profile", ".bash_login", ".bash_aliases", ".bash_logout", ".zshrc", ".zprofile", ".zshenv", ".zlogin", ".zlogout",
+            ".envrc", ".profile", ".npmrc", ".yarnrc", ".yarnrc.yml", ".pnp.cjs", ".pnp.loader.mjs", ".pnpmfile.cjs", "bunfig.toml", ".bunfig.toml", ".bazelrc",
+            ".bazelversion", ".bazeliskrc", ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml", ".lefthook.yml", ".lefthook.yaml", ".mcp.json", ".claude.json",
+            ".ripgreprc", "pyrightconfig.json", "maven-wrapper.properties", "gradle-wrapper.properties");
+
+
+    public static PermissionDecision checkRead(WorkspaceGuard guard, String rawPath, ToolPermissionContext settings) {
+        return check(guard, rawPath, settings, false);
     }
 
+    public static PermissionDecision checkWrite(WorkspaceGuard guard, String rawPath, ToolPermissionContext settings) {
+        return check(guard, rawPath, settings, true);
+    }
     private static PermissionDecision check(WorkspaceGuard guard, String rawPath, ToolPermissionContext context, boolean write) {
         if (isNetwork(rawPath)) {
             return PermissionDecision.askAlways("Attempt to access network path: " + rawPath);
@@ -99,7 +118,7 @@ public class PathInspector {
                         if (segment.equalsIgnoreCase(".claude") && (i + 1 < nameCount && p.getName(i + 1).toString().equalsIgnoreCase("workspace"))) {
                             continue;
                         }
-                        if (PROTECTED_DIRS.contains(segment)) {
+                        if (PROTECTED_DIRECTORIES.contains(segment)) {
                             return true;
                         }
                         if (segment.equalsIgnoreCase(".config") && (i + 1 < nameCount && p.getName(i + 1).toString().equalsIgnoreCase(".git"))) {
@@ -118,7 +137,7 @@ public class PathInspector {
 
     }
 
-    private static PermissionEntry find(WorkspaceGuard guard, Path path, ToolPermissionContext context, PermissionBehavior behavior, boolean write) {
+    private static @Nullable PermissionEntry find(WorkspaceGuard guard, Path path, ToolPermissionContext context, PermissionBehavior behavior, boolean write) {
         for (PermissionEntry entry : context.permissionEntries()) {
             if (entry.behavior() == behavior && matches(guard, path, entry, write)) {
                 return entry;

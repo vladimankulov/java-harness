@@ -4,8 +4,8 @@ import com.harness.agent.property.AgentProperty;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.guard.FileStateGuard;
-import com.harness.tooling.impl.FileReadTool;
 import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.FileReadTool;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -21,13 +21,17 @@ class FileReadToolTest {
 
     @TempDir
     Path workspace;
-    private final FileStateGuard cache = new FileStateGuard();
-    private final ToolContext context = new ToolContext(cache);
+
+    private final ToolContext context =
+            com.harness.TestPermissionConfig.context(new FileStateGuard());
+
     private FileReadTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new FileReadTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
+        tool =
+                new FileReadTool(
+                        new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult read(String path, Integer offset, Integer limit) {
@@ -35,10 +39,11 @@ class FileReadToolTest {
     }
 
     private void write(String name, int lines) throws IOException {
-        String content = IntStream.rangeClosed(1, lines)
-                .mapToObj(i -> "строка" + i)
-                .reduce((a, b) -> a + "\n" + b)
-                .orElseThrow();
+        String content =
+                IntStream.rangeClosed(1, lines)
+                        .mapToObj(i -> "строка" + i)
+                        .reduce((a, b) -> a + "\n" + b)
+                        .orElseThrow();
         Files.writeString(workspace.resolve(name), content);
     }
 
@@ -80,10 +85,11 @@ class FileReadToolTest {
     }
 
     @Test
-    void mustNotThrowExceptionWhenFileOutOfWorkingDir() {
-        ToolResult result = read("../../../etc/passwd", null, null);
-
-        assertThat(result.error()).isTrue();
+    void заПределыРабочейПапкиНеВыпускает() {
+        var decision =
+                tool.checkPermissions(
+                        new FileReadTool.Input("../outside.txt", null, null), context);
+        assertThat(decision.behavior()).isEqualTo(com.harness.permission.PermissionBehavior.ASK);
         assertThat(result.content()).contains("outside of the working directory");
     }
 

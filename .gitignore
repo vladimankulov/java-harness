@@ -5,3 +5,4 @@ ollama/
 *.iml
 *.iws
 out/
+.harness/permissions.local.yaml

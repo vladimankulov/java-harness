@@ -14,11 +14,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 class HudTest {
 
     private Hud hud;
+    private Agent agent;
     private Conversation conversation;
     private ByteArrayOutputStream buffer;
 
@@ -26,10 +25,17 @@ class HudTest {
     void setUp() {
         buffer = new ByteArrayOutputStream();
         conversation = new Conversation("SYSTEM PROMPT");
-        Agent agent = Mockito.mock(Agent.class);
+        agent = Mockito.mock(Agent.class);
         Mockito.when(agent.conversation()).thenReturn(conversation);
 
-        hud = new Hud(new MachineViewPrinter(new PrintStream(buffer, true, StandardCharsets.UTF_8)), agent, List.of());
+        hud =
+                new Hud(
+                        new MachineViewPrinter(
+                                new PrintStream(buffer, true, StandardCharsets.UTF_8)),
+                        agent,
+                        List.of(),
+                        com.harness.TestPermissionConfig.evaluator(
+                                com.harness.TestPermissionConfig.permissive()));
     }
 
     private String output() {
@@ -74,5 +80,71 @@ class HudTest {
                 .contains("токенов: ~");
     }
 
+    @Test
+    void запросРазрешенияПоказываетКомандуИПричину() {
+        hud.onPermissionRequested(
+                new AgentEvent.PermissionRequested("Bash", "build", "нужен запуск"));
+        assertThat(output()).contains("ТРЕБУЕТСЯ АВТОРИЗАЦИЯ", "Bash", "build", "нужен запуск");
+    }
 
+    @Test
+    void разрешениеПравкиРисуетМанипуляторы() {
+        hud.onPermissionResolved(new AgentEvent.PermissionResolved("Edit", true));
+        assertThat(output()).contains("МАНИПУЛЯТОРЫ", "ARMED").doesNotContain("ВООРУЖЕНИЕ");
+    }
+
+    @Test
+    void отказНеПечатаетArmed() {
+        hud.onPermissionResolved(new AgentEvent.PermissionResolved("Bash", false));
+        assertThat(output()).contains("В ДОСТУПЕ ОТКАЗАНО").doesNotContain("ARMED");
+    }
+
+    @Test
+    void вооружениеПомечаетсяLockedПоРежимуСервиса() {
+        var properties = new com.harness.agent.AgentProperties(20, ".", true);
+        var permissions =
+                com.harness.TestPermissionConfig.evaluator(
+                        new com.harness.permission.PermissionProperties(
+                                com.harness.permission.PermissionMode.ACCEPT_EDITS,
+                                List.of(),
+                                List.of(),
+                                List.of(),
+                                List.of()));
+        Hud monitor =
+                new Hud(
+                        new MachineViewPrinter(
+                                new PrintStream(buffer, true, StandardCharsets.UTF_8)),
+                        agent,
+                        List.of(new com.harness.tool.impl.BashTool(new com.harness.tool.WorkspaceGuard(properties))),
+                        permissions);
+        List<BootLine> lines =
+                org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                        monitor, "collectBootLines", 160);
+        assertThat(lines)
+                .filteredOn(line -> line.part() == BodyPart.ARMAMENT)
+                .singleElement()
+                .extracting(BootLine::status)
+                .isEqualTo(BootStatus.LOCKED);
+    }
+
+    @Test
+    void bypassСнимаетОбычнуюБлокировкуВBootЛоге() {
+        var properties = new com.harness.agent.AgentProperties(20, ".", true);
+        Hud monitor =
+                new Hud(
+                        new MachineViewPrinter(
+                                new PrintStream(buffer, true, StandardCharsets.UTF_8)),
+                        agent,
+                        List.of(new com.harness.tool.impl.BashTool(new com.harness.tool.WorkspaceGuard(properties))),
+                        com.harness.TestPermissionConfig.evaluator(
+                                com.harness.TestPermissionConfig.permissive()));
+        List<BootLine> lines =
+                org.springframework.test.util.ReflectionTestUtils.invokeMethod(
+                        monitor, "collectBootLines", 160);
+        assertThat(lines)
+                .filteredOn(line -> line.part() == BodyPart.ARMAMENT)
+                .singleElement()
+                .extracting(BootLine::status)
+                .isEqualTo(BootStatus.ONLINE);
+    }
 }

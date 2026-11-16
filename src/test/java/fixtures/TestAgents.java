@@ -1,5 +1,6 @@
 package fixtures;
 
+import com.harness.TestPermissionConfig;
 import com.harness.agent.Agent;
 import com.harness.agent.property.AgentProperty;
 import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
@@ -14,7 +15,10 @@ import org.springframework.ai.chat.model.ChatModel;
 
 import java.util.List;
 
-public final class TestAgents {
+/**
+ * Сборка агента для тестов: без Spring-контекста и без сети.
+ */
+final class TestAgents {
 
     private TestAgents() {
     }
@@ -23,10 +27,25 @@ public final class TestAgents {
         return agent(model, events, new AgentProperty(20, ".", true), tools);
     }
 
-    public static Agent agent(
-            ChatModel model, RecordingEventPublisher events, AgentProperty properties, Tool<?>... tools) {
-        ToolRegistry registry = new ToolRegistry(List.of(tools), events, new FileStateGuard());
-        return new Agent(model, events, registry, new SpringAiToolCallbackAdapter(registry), properties, context(registry, properties));
+    static Agent agent(
+            ChatModel model,
+            RecordingEventPublisher events,
+            AgentProperty properties,
+            Tool<?>... tools) {
+        ToolRegistry registry =
+                com.harness.TestPermissionConfig.registry(
+                        List.of(tools),
+                        events,
+                        new FileStateGuard(),
+                        TestPermissionConfig.permissive(),
+                        TestPermissionConfig.allowOnce());
+        return new Agent(
+                model,
+                events,
+                registry,
+                new SpringAiToolCallbackAdapter(registry),
+                properties,
+                context(registry, properties));
     }
 
     /**

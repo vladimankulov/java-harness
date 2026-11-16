@@ -75,6 +75,21 @@ public class MachineViewPrinter {
         print(Ansi.red("> ПОЛУЧЕН ПРИКАЗ: ") + userInput);
     }
 
+    void showPermissionRequested(String toolName, String target, String reason) {
+        print(Ansi.bold(Ansi.red("> ТРЕБУЕТСЯ АВТОРИЗАЦИЯ: ")) + toolName + " → " + target,
+                Ansi.dim("  причина: " + reason));
+    }
+
+    void showPermissionResolved(BodyPart part, boolean granted) {
+        if (!granted) {
+            print(Ansi.dim("> В ДОСТУПЕ ОТКАЗАНО"));
+            return;
+        }
+        String label = part.displayName() + " ";
+        String dots = ".".repeat(Math.max(1, LABEL_WIDTH - label.length()));
+        print(Ansi.bold(Ansi.brightRed("> " + label + dots + " ARMED")));
+    }
+
     /**
      * Как назвать себя, решает сам инструмент: он присылает готовую строку вида
      * {@code [READ] Tool.java}. Экран её не разбирает, только обрамляет —

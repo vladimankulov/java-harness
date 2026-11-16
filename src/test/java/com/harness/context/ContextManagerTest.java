@@ -1,5 +1,6 @@
 package com.harness.context;
 
+import com.harness.TestPermissionConfig;
 import com.harness.agent.property.AgentProperty;
 import com.harness.tooling.ToolRegistry;
 import com.harness.tooling.guard.FileStateGuard;
@@ -22,13 +23,16 @@ class ContextManagerTest {
     @TempDir
     Path folder;
 
-    /**
-     * Пустая папка: не репозиторий, {@code HARNESS.md} нет.
-     */
+    /** Пустая папка: не репозиторий, {@code HARNESS.md} нет. */
     private ContextManager manager() {
         AgentProperty properties = new AgentProperty(20, folder.toString(), true);
-        ToolRegistry registry = new ToolRegistry(List.of(), event -> {
-        }, new FileStateGuard());
+        ToolRegistry registry =
+                com.harness.TestPermissionConfig.registry(
+                        List.of(),
+                        event -> {},
+                        new FileStateGuard(),
+                        TestPermissionConfig.permissive(),
+                        TestPermissionConfig.allowOnce());
         return new ContextManager(
                 new GitStatusProvider(properties),
                 new ProjectMemoryLoader(properties),

@@ -1,5 +1,7 @@
 package com.harness.agent;
 
+import org.springframework.context.annotation.Import;
+import com.harness.TestPermissionConfig;
 import com.harness.agent.event.AgentEvent;
 import com.harness.tooling.Tool;
 import fixtures.RecordingEventPublisher;
@@ -23,6 +25,7 @@ import static org.assertj.core.api.Assertions.fail;
  */
 @Tag("ollama")
 @SpringBootTest
+@Import(TestPermissionConfig.class)
 @ActiveProfiles("test")
 class ContextUsageOllamaTest {
 
