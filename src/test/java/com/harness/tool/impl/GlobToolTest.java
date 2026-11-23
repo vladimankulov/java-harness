@@ -119,7 +119,7 @@ class GlobToolTest {
     void выходЗаРабочуюПапкуЗапрещён() {
         var decision = tool.checkPermission(new GlobTool.Input("*.java", ".."), context);
         assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
-        assertThat(decision.reason()).contains("outside of the working directory");
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 
     /**

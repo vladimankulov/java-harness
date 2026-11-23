@@ -15,7 +15,7 @@ public class FileStateGuard {
   private final Map<Path, FileState> fileStates = new ConcurrentHashMap<>();
 
   public void remember(Path filePath) {
-    Path file = filePath.normalize();
+    Path file = key(filePath);
 
     try {
       fileStates.put(file, new FileState(Files.readString(file), modifiedAt(file)));
@@ -25,7 +25,7 @@ public class FileStateGuard {
   }
 
   public @NullMarked @Nullable FileState get(Path filePath) {
-    return fileStates.get(filePath.normalize());
+    return fileStates.get(key(filePath));
   }
 
   public @NullMarked @Nullable String whyCannotWrite(Path filePath) {
@@ -33,7 +33,7 @@ public class FileStateGuard {
       return null;
     }
 
-    Path file = filePath.normalize();
+    Path file = key(filePath);
     FileState known = fileStates.get(file);
 
     if (known == null) {
@@ -44,6 +44,15 @@ public class FileStateGuard {
       return "File content has changed since last read. Use Read tool to read the file content and repeat your changes";
     }
     return null;
+  }
+
+  /** Ключ — реальный путь: один файл через symlink и напрямую (/var и /private/var) — одно состояние. */
+  private static Path key(Path filePath) {
+    try {
+      return filePath.toRealPath();
+    } catch (IOException e) {
+      return filePath.toAbsolutePath().normalize();
+    }
   }
 
   private boolean sameContentOnDisk(Path filePath, FileState known) {

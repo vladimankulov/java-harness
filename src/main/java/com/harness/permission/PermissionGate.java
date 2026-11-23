@@ -43,5 +43,4 @@ public class PermissionGate {
     public boolean isAvailable(Tool<?> tool, ToolContext context) {
         return permissionEvaluator.isAvailable(tool, context);
     }
-
 }

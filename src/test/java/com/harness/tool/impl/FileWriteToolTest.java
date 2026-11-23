@@ -92,7 +92,7 @@ class FileWriteToolTest {
         var decision =
                 tool.checkPermission(new FileWriteTool.Input("../outside.txt", "x"), context);
         assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
-        assertThat(decision.reason()).contains("outside of the working directory");
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 
     @Test

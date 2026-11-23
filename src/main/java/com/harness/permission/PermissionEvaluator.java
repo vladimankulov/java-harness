@@ -62,14 +62,12 @@ public class PermissionEvaluator {
             return PermissionDecision.ask("Ask user according the rule: %s".formatted(askFromSettings.rule().toString()));
         }
 
-
-
         if (settings.mode() == PermissionMode.BYPASS_PERMISSIONS) {
             return PermissionDecision.allow("Allowed by bypass permissions");
         }
         PermissionEntry allowFromSettings = settings.wholeToolRule(tool.name(), PermissionBehavior.ALLOW);
         if (allowFromSettings != null) {
-            return PermissionDecision.ask("Allowed by the rule: %s".formatted(allowFromSettings.rule().toString()));
+            return PermissionDecision.allow("Allowed by the rule:%s".formatted(allowFromSettings.rule().toString()));
         }
 
         return fromTool;

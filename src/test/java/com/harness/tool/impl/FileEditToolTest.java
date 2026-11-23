@@ -161,6 +161,6 @@ class FileEditToolTest {
                 tool.checkPermission(
                         new FileEditTool.Input("../outside.txt", "a", "b", null), context);
         assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
-        assertThat(decision.reason()).contains("outside of the working directory");
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 }

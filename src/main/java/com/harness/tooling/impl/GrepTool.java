@@ -3,7 +3,7 @@ package com.harness.tooling.impl;
 import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
-import com.harness.permission.PathInspector;
+import com.harness.permission.inspectors.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.Ignored;
 import com.harness.tooling.guard.WorkspaceGuard;

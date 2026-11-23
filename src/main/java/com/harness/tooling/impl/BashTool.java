@@ -3,7 +3,7 @@ package com.harness.tooling.impl;
 import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
-import com.harness.permission.CommandInspector;
+import com.harness.permission.inspectors.BashInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.WorkspaceGuard;
 import org.jspecify.annotations.Nullable;
@@ -11,15 +11,13 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +46,7 @@ public class BashTool implements Tool<BashTool.Input> {
     public String description() {
         return """
                 Executes a shell command in the working directory and returns its exit code and output.
-                - Use this to build and run tests. On Windows commands run in cmd.exe otherwise /bin/bash.
+                - Use this to build and run tests. On Mac OS/Linux  platforms commands run /bin/bash other commands run in cmd.exe.
                 - Prefer Grep, Edit, Write, Read, Glob tools for inspecting and editing files.
                 - Only the last %d output characters are retained
                 - A command might require a user's conformation or be refused
@@ -154,7 +152,7 @@ public class BashTool implements Tool<BashTool.Input> {
 
     @Override
     public PermissionDecision checkPermission(Input input, ToolContext context) {
-        return CommandInspector.check(input.command, context.permissions());
+        return BashInspector.check(input.command, context.permissions());
     }
 
     public int getMaxOutputCharacters() {
@@ -178,7 +176,7 @@ public class BashTool implements Tool<BashTool.Input> {
         ProcessBuilder builder = new ProcessBuilder(command)
                 .directory(workspaceGuard.getRoot().toFile())
                 .redirectErrorStream(true);
-//        provideJdk(builder.environment());
+        provideJdk(builder.environment());
         Process process = builder.start();
         process.getOutputStream().close();
         return process;
@@ -195,5 +193,16 @@ public class BashTool implements Tool<BashTool.Input> {
 
     private static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
+    }
+
+    private static void provideJdk(Map<String, String> environment) {
+        String javaHome = System.getProperty("java.home");
+        if (javaHome == null || javaHome.isBlank()) return;
+        environment.putIfAbsent("JAVA_HOME", javaHome);
+        // В Windows переменная может называться Path, а не PATH.
+        String pathKey = environment.keySet().stream().filter(key -> key.equalsIgnoreCase("PATH")).findFirst().orElse("PATH");
+        String javaBin = Path.of(javaHome, "bin").toString();
+        String path = environment.getOrDefault(pathKey, "");
+        if (!path.contains(javaBin)) environment.put(pathKey, javaBin + File.pathSeparator + path);
     }
 }

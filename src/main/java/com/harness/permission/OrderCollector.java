@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class OrderCollector {
@@ -54,7 +55,8 @@ public class OrderCollector {
 
         PermissionMode mode = permissionProperty.mode();
 
-        for (PermissionSource source : this.permissionsFromFiles.keySet()) {
+        // Порядок важен: режим берётся из последнего источника (USER → PROJECT → LOCAL).
+        for (PermissionSource source : List.of(PermissionSource.USER, PermissionSource.PROJECT, PermissionSource.LOCAL)) {
             Path file = permissionsFromFiles.get(source);
 
             if (file == null) {
@@ -94,8 +96,9 @@ public class OrderCollector {
             return;
         }
         ruleSetByBehavior.add(rule);
+        localSettings.put(behaviorKey, ruleSetByBehavior);
         try {
-            Path directories = Files.createDirectories(localSettingsFilePath.getRoot());
+            Path directories = Files.createDirectories(localSettingsFilePath.toAbsolutePath().getParent());
 
             Path tempLocalSettingsFile = Files.createTempFile(directories, "permission", ".yml");
 
@@ -108,7 +111,7 @@ public class OrderCollector {
                     Files.move(tempLocalSettingsFile, localSettingsFilePath, StandardCopyOption.REPLACE_EXISTING);
                 }
             } finally {
-                Files.delete(tempLocalSettingsFile);
+                Files.deleteIfExists(tempLocalSettingsFile);
             }
 
 
@@ -120,14 +123,14 @@ public class OrderCollector {
 
     private List<String> strings(@Nullable Object o) {
         if (o == null) {
-            return List.of();
+            return new ArrayList<>();
         }
 
         if (!(o instanceof List<?> list)) {
             throw new IllegalStateException("Failed to get list from object: " + o);
         }
 
-        return list.stream().map(Object::toString).toList();
+        return list.stream().map(Object::toString).collect(Collectors.toCollection(ArrayList::new));
     }
 
     private Map<String, Object> read(Path filePath) {

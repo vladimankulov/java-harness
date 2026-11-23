@@ -160,7 +160,7 @@ class GrepToolTest {
         var decision =
                 tool.checkPermission(new GrepTool.Input("x", "..", null, null, null), context);
         assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
-        assertThat(decision.reason()).contains("outside of the working directory");
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 
     /**
@@ -210,7 +210,7 @@ class GrepToolTest {
         List<String> lines =
                 grep("совпадение", GrepTool.OutputMode.CONTENT).content().lines().toList();
         List<String> promise =
-                lines.stream().filter(line -> line.contains("показаны первые")).toList();
+                lines.stream().filter(line -> line.contains("showed first")).toList();
 
         assertThat(promise).hasSize(1);
         int promised = Integer.parseInt(promise.getFirst().replaceAll("\\D+", " ").strip());

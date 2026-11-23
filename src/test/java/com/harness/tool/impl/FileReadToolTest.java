@@ -91,7 +91,7 @@ class FileReadToolTest {
                 tool.checkPermission(
                         new FileReadTool.Input("../outside.txt", null, null), context);
         assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
-        assertThat(decision.reason()).contains("outside of the working directory");
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 
     @Test

@@ -82,7 +82,13 @@ class PermissionGateTest {
                         return String.class;
                     }
 
-                    public PermissionDecision checkPermissions(String input, ToolContext context) {
+                    @Override
+                    public boolean isReadOnly() {
+                        return false;
+                    }
+
+                    @Override
+                    public PermissionDecision checkPermission(String input, ToolContext context) {
                         trace.add("check");
                         return PermissionDecision.ask("вопрос");
                     }

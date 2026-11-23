@@ -6,8 +6,8 @@
 ## Как собирать и запускать
 
 ```
-.\mvnw.cmd test                  быстрые тесты
-.\mvnw.cmd -DskipTests package   сборка исполняемого jar
+./mvnw test                  быстрые тесты
+./mvnw -DskipTests package   сборка исполняемого jar
 java -Dstdout.encoding=UTF-8 -jar target/harness-0.1.0-SNAPSHOT.jar
 ```
 

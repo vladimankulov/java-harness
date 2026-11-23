@@ -17,7 +17,8 @@ public class WorkspaceGuard {
     private final Path root;
 
     public WorkspaceGuard(AgentProperty agentProperty) {
-        this.root = Path.of(agentProperty.workingDirectory()).toAbsolutePath().normalize();
+        // Корень храним по реальному пути: иначе реальные пути файлов (/private/var/...) не сравнить с корнем (/var/...).
+        this.root = realPath(Path.of(agentProperty.workingDirectory()));
     }
 
     public Path getRoot() {

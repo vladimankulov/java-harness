@@ -1,4 +1,4 @@
-package com.harness.permission;
+package com.harness.permission.inspectors;
 
 import com.harness.model.permission.PermissionDecision;
 import com.harness.model.permission.PermissionEntry;
@@ -7,6 +7,8 @@ import com.harness.model.permission.ToolPermissionContext;
 import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.permission.enums.PermissionMode;
 import com.harness.model.permission.enums.PermissionSource;
+import com.harness.permission.PermissionPathMatcher;
+import com.harness.permission.PermissionUpdate;
 import com.harness.tooling.guard.WorkspaceGuard;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.StringUtils;
@@ -76,10 +78,10 @@ public final class PathInspector {
         }
         PermissionEntry allow = find(guard, path, context, PermissionBehavior.ALLOW, write);
         if (allow != null) {
-            return PermissionDecision.ask("Access to the filePath %s allowd by the rule: %s".formatted(path, allow.rule().toString()));
+            return PermissionDecision.allow("Access to the filePath %s allowed by the rule: %s".formatted(path, allow.rule().toString()));
         }
 
-        return PermissionDecision.ask((write ? "changing file:" : "reading file:") + path + "outside of a working directories")
+        return PermissionDecision.ask((write ? "changing file:" : "reading file:") + path + " outside of the working directories")
                 .withSuggestions(suggestions(path, write, inside));
 
 
@@ -130,8 +132,11 @@ public final class PathInspector {
     private static boolean isWorkingDirectories(WorkspaceGuard guard, Path path, ToolPermissionContext context) {
         List<Path> roots = new ArrayList<>(context.additionalWorkingDirectories());
         roots.add(guard.getRoot());
-        return guard.pathsForCheck(path)
-                .stream().allMatch(r -> roots.stream().anyMatch(p -> p.startsWith(r.toAbsolutePath().normalize()) || p.startsWith(guard.realPath(r))));
+
+        List<Path> pathsToCheck = guard.pathsForCheck(path);
+        return pathsToCheck
+                .stream()
+                .allMatch(pathToCheck -> roots.stream().anyMatch(rootPath -> pathToCheck.startsWith(rootPath.toAbsolutePath().normalize()) || pathToCheck.startsWith(guard.realPath(rootPath))));
 
     }
 

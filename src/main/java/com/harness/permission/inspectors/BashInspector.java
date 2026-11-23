@@ -1,4 +1,4 @@
-package com.harness.permission;
+package com.harness.permission.inspectors;
 
 import com.harness.model.permission.PermissionDecision;
 import com.harness.model.permission.PermissionEntry;
@@ -6,6 +6,7 @@ import com.harness.model.permission.PermissionRule;
 import com.harness.model.permission.ToolPermissionContext;
 import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.permission.enums.PermissionSource;
+import com.harness.permission.PermissionUpdate;
 import org.jspecify.annotations.Nullable;
 import org.springframework.util.StringUtils;
 
@@ -19,8 +20,8 @@ import java.util.Set;
  * Это учебный разбор простых команд, а не парсер shell: всё, чего не понимаем, отдаём человеку.
  * Команды здесь не выполняем и человека не спрашиваем: Decision уходит через Tool в PermissionEvaluator и PermissionGate.
  */
-public final class CommandInspector {
-    private CommandInspector() {}
+public final class BashInspector {
+    private BashInspector() {}
 
     // Небольшой список команд, которые в учебном агенте считаем чтением без вопроса.
     private static final Set<String> READ_ONLY = Set.of(

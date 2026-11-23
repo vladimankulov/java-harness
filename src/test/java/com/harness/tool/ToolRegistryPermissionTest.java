@@ -81,7 +81,7 @@ class ToolRegistryPermissionTest {
                 registry(List.of("Probe"), PermissionPrompt.Answer.ALLOW_ONCE)
                         .execute("Probe", "\"one\"");
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("запрещено правилом Probe");
+        assertThat(result.content()).contains("call is forbidden: Denied by rule: Probe");
         assertThat(tool.calls).isZero();
         assertThat(questions.get()).isZero();
     }
@@ -133,7 +133,7 @@ class ToolRegistryPermissionTest {
         ToolResult result =
                 registry(List.of(), PermissionPrompt.Answer.ALLOW_ONCE).execute("Probe", "{");
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("не разобрать аргументы");
+        assertThat(result.content()).contains("Failed to read arguments for tool");
         assertThat(tool.calls).isZero();
         assertThat(questions.get()).isZero();
     }

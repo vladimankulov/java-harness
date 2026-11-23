@@ -69,7 +69,7 @@ class BashMissionOllamaTest {
                         PermissionMode.DEFAULT, List.of(), List.of("Edit", "Write"), List.of());
         PermissionPrompt prompt =
                 (name, target, reason) -> {
-                    if (name.equals("Bash") && target.strip().equals(".\\mvnw.cmd test")) {
+                    if (name.equals("Bash") && (target.strip().contains("mvnw") && target.strip().contains("test"))) {
                         confirmations.incrementAndGet();
                         return PermissionPrompt.Answer.ALLOW_ONCE;
                     }
@@ -100,8 +100,7 @@ class BashMissionOllamaTest {
                 .isPositive();
         assertThat(executed.get()).as("Bash должен действительно исполнить команду").isNotNull();
         assertThat(executed.get().error()).isFalse();
-        assertThat(executed.get().content()).contains("код возврата: 0", "BUILD SUCCESS");
+        assertThat(executed.get().content()).contains("exitCode: 0", "BUILD SUCCESS");
         assertThat(answer).isNotBlank();
-        System.out.println("ЖИВАЯ МИССИЯ: " + answer);
     }
 }

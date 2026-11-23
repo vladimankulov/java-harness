@@ -9,6 +9,7 @@ import com.harness.model.permission.ToolPermissionContext;
 import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.permission.enums.PermissionMode;
 import com.harness.model.permission.enums.PermissionSource;
+import com.harness.permission.inspectors.PathInspector;
 import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import fixtures.TestPermissionConfig;

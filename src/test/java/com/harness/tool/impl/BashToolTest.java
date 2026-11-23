@@ -100,7 +100,7 @@ class BashToolTest {
         String configured = System.getenv("JAVA_HOME");
         assertThat(result.content())
                 .contains(configured == null ? System.getProperty("java.home") : configured);
-        assertThat(run("java -version").content()).contains("код возврата: 0");
+        assertThat(run("java -version").content()).contains("exitCode: 0");
     }
 
     @Test
