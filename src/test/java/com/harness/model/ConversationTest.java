@@ -1,5 +1,6 @@
 package com.harness.model;
 
+import com.harness.model.conversation.Conversation;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;

@@ -1,11 +1,13 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.FileWriteTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,7 +24,7 @@ class FileWriteToolTest {
     Path workspace;
 
     private final FileStateGuard cache = new FileStateGuard();
-    private final ToolContext context = new ToolContext(cache);
+    private final ToolContext context = TestPermissionConfig.context(cache);
 
     private FileWriteTool tool;
 
@@ -87,10 +89,10 @@ class FileWriteToolTest {
 
     @Test
     void выходЗаРабочуюПапкуЗапрещён() {
-        ToolResult result = write("../../чужое.java", "class Agent {}\n");
-
-        assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("outside of the working directory");
+        var decision =
+                tool.checkPermission(new FileWriteTool.Input("../outside.txt", "x"), context);
+        assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 
     @Test

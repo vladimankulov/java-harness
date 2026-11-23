@@ -14,6 +14,9 @@ import org.springframework.ai.chat.model.ChatModel;
 
 import java.util.List;
 
+/**
+ * Сборка агента для тестов: без Spring-контекста и без сети.
+ */
 public final class TestAgents {
 
     private TestAgents() {
@@ -23,10 +26,25 @@ public final class TestAgents {
         return agent(model, events, new AgentProperty(20, ".", true), tools);
     }
 
-    public static Agent agent(
-            ChatModel model, RecordingEventPublisher events, AgentProperty properties, Tool<?>... tools) {
-        ToolRegistry registry = new ToolRegistry(List.of(tools), events, new FileStateGuard());
-        return new Agent(model, events, registry, new SpringAiToolCallbackAdapter(registry), properties, context(registry, properties));
+    static Agent agent(
+            ChatModel model,
+            RecordingEventPublisher events,
+            AgentProperty properties,
+            Tool<?>... tools) {
+        ToolRegistry registry =
+                TestPermissionConfig.registry(
+                        List.of(tools),
+                        events,
+                        new FileStateGuard(),
+                        TestPermissionConfig.permissive(),
+                        TestPermissionConfig.allowOnce());
+        return new Agent(
+                model,
+                events,
+                registry,
+                new SpringAiToolCallbackAdapter(registry),
+                properties,
+                context(registry, properties));
     }
 
     /**

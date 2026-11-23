@@ -67,8 +67,13 @@ public class SystemPromptBuilder {
                   working directory, branch, uncommitted changes, or project identity, answer
                   directly from Environment, Repository, and Project notes when provided.
                   Do not call tools to verify, rediscover, or count facts already supplied there.
-                  Use tools when the required information is missing, the user asks for a fresh
-                  check, or the task requires an action rather than an answer.
+                - A question about supplied facts requires an ANSWER, not an ACTION.
+                  "What branch are we on?" -> answer from Repository; do not run git.
+                  "Are there uncommitted changes?" -> answer from Repository; do not run git.
+                  "What is this project?" -> answer from Project notes; do not read or search files.
+                  "Run the tests" -> ACTION: use Bash and report its actual result.
+                - Use tools for actions, missing information, or an explicit request to refresh
+                  the supplied snapshot. Asking what the current branch is does not request a refresh.
                 You have exactly %d tools. This is the complete list — there are no others:
                 %s
                 - To find files by name use Glob, to search their contents use Grep.

@@ -1,11 +1,13 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.FileEditTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -22,13 +24,15 @@ class FileEditToolTest {
     Path workspace;
 
     private final FileStateGuard cache = new FileStateGuard();
-    private final ToolContext context = new ToolContext(cache);
+    private final ToolContext context = TestPermissionConfig.context(cache);
 
     private FileEditTool tool;
 
     @BeforeEach
     void setUp() {
-        tool = new FileEditTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
+        tool =
+                new FileEditTool(
+                        new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
     }
 
     private ToolResult edit(String path, String oldString, String newString, Boolean replaceAll) {
@@ -72,8 +76,10 @@ class FileEditToolTest {
     void изменившийсяПослеЧтенияФайлПравитьНельзя() throws IOException {
         Path file = прочитанный("Agent.java", "class Agent {}\n");
         Files.writeString(file, "class Agent { void run() {} }\n");
-        Files.setLastModifiedTime(file, java.nio.file.attribute.FileTime.fromMillis(
-                Files.getLastModifiedTime(file).toMillis() + 5_000));
+        Files.setLastModifiedTime(
+                file,
+                java.nio.file.attribute.FileTime.fromMillis(
+                        Files.getLastModifiedTime(file).toMillis() + 5_000));
 
         ToolResult result = edit("Agent.java", "class Agent {", "class Robot {", null);
 
@@ -151,9 +157,10 @@ class FileEditToolTest {
 
     @Test
     void выходЗаРабочуюПапкуЗапрещён() {
-        ToolResult result = edit("../../чужое.java", "a", "b", null);
-
-        assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("outside of the working directory");
+        var decision =
+                tool.checkPermission(
+                        new FileEditTool.Input("../outside.txt", "a", "b", null), context);
+        assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 }

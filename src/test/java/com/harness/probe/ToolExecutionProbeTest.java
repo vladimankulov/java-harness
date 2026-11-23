@@ -1,5 +1,6 @@
 package com.harness.probe;
 
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -12,6 +13,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -29,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @Tag("ollama")
 @SpringBootTest
+@Import(TestPermissionConfig.class)
 @ActiveProfiles("test")
 class ToolExecutionProbeTest {
 
@@ -68,6 +71,11 @@ class ToolExecutionProbeTest {
                 new Prompt(List.of(new UserMessage("What is the weather in Berlin? Use the tool.")), options));
 
         AssistantMessage answer = response.getResult().getOutput();
+
+        System.out.println("=== hasToolCalls: " + answer.hasToolCalls());
+        System.out.println("=== toolCalls:    " + answer.getToolCalls());
+        System.out.println("=== text:         " + answer.getText());
+        System.out.println("=== executions:   " + executions.get());
 
         assertThat(answer.hasToolCalls())
                 .as("модель должна вернуть намерение вызвать инструмент")

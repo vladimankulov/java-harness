@@ -4,6 +4,7 @@ import com.harness.agent.Agent;
 import com.harness.agent.event.AgentEvent;
 import com.harness.context.TokenEstimator;
 import com.harness.tooling.Tool;
+import com.harness.permission.PermissionEvaluator;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
@@ -22,11 +23,13 @@ public class Hud {
     private final MachineViewPrinter machinePrinter;
     private final Agent agent;
     private final List<Tool<?>> tools;
+    private final PermissionEvaluator permissions;
 
-    public Hud(MachineViewPrinter machinePrinter, Agent agent, List<Tool<?>> tools) {
+    public Hud(MachineViewPrinter machinePrinter, Agent agent, List<Tool<?>> tools, PermissionEvaluator permissions) {
         this.machinePrinter = machinePrinter;
         this.agent = agent;
         this.tools = tools;
+        this.permissions = permissions;
     }
 
     @EventListener(ApplicationStartedEvent.class)
@@ -49,6 +52,9 @@ public class Hud {
             BodyPart part = forToolName(tool.name());
             BootLine bootLine = lines.computeIfAbsent(part, BootLine::empty);
             bootLine.components().add(tool.name());
+            if (permissions.isLocked(tool)) {
+                lines.put(part, new BootLine(part, BootStatus.LOCKED, bootLine.components()));
+            }
         }
         if (!tools.isEmpty()) {
             lines.put(BodyPart.TOOL_BUS, BootLine.of(BodyPart.TOOL_BUS, BootStatus.ONLINE,
@@ -77,6 +83,18 @@ public class Hud {
     @EventListener
     public void onToolCallStarted(AgentEvent.ToolCallStarted event) {
         machinePrinter.showToolCallStarted(event.description());
+    }
+
+    /** PermissionGate прислал событие о вопросе. Hud показывает сообщение; ответ читает консоль. */
+    @EventListener
+    public void onPermissionRequested(AgentEvent.PermissionRequested event) {
+        machinePrinter.showPermissionRequested(event.toolName(), event.target(), event.reason());
+    }
+
+    /** PermissionGate прислал ответ: при согласии Hud показывает ARMED, при отказе — сообщение об отказе. */
+    @EventListener
+    public void onPermissionResolved(AgentEvent.PermissionResolved event) {
+        machinePrinter.showPermissionResolved(forToolName(event.toolName()), event.granted());
     }
 
     @EventListener

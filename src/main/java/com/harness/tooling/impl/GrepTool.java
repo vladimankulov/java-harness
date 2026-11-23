@@ -1,11 +1,14 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.permission.inspectors.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.Ignored;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -56,6 +59,16 @@ public class GrepTool implements Tool<GrepTool.Input> {
     @Override
     public Class<Input> inputType() {
         return Input.class;
+    }
+
+
+    @Override
+    public PermissionDecision checkPermission(GrepTool.Input input, ToolContext context) {
+        return PathInspector.checkRead(workspaceGuard, searchPath(input), context.permissions());
+    }
+
+    private String searchPath(GrepTool.Input input) {
+        return StringUtils.hasText(input.path) ? input.path : ".";
     }
 
     @Override
@@ -141,7 +154,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
                 if (regex.matcher(lines.get(i)).find()) {
                     builder.append(workspaceGuard.relativize(file));
                     builder.append(" ");
-                    builder.append(i+1).append("\t").append(lines.get(i).strip()).append("\n");
+                    builder.append(i + 1).append("\t").append(lines.get(i).strip()).append("\n");
                     shown += 1;
                 }
             }
@@ -190,7 +203,7 @@ public class GrepTool implements Tool<GrepTool.Input> {
             return Files.readAllLines(file);
         } catch (MalformedInputException e) {
             return List.of();
-        } catch (IOException e) {
+        } catch (IOException ignored) {
             return List.of();
         }
     }
@@ -199,13 +212,17 @@ public class GrepTool implements Tool<GrepTool.Input> {
             @ToolParam(description = "Regular expression to search for")
             String pattern,
             @ToolParam(required = false, description = "Directory to search in, default to the project root")
+            @Nullable
             String path,
             @ToolParam(required = false, description = "Only search files matching this glob, for example **/*.java")
+            @Nullable
             String glob,
             @ToolParam(required = false, description = "FILES_WITH_MATHCES lists path(default), CONTENT shows matching lines with\n" +
                     "line numbers, COUNT shows how many matches per file")
+            @Nullable
             OutputMode outputMode,
             @ToolParam(required = false, description = "Case insensitive search")
+            @Nullable
             Boolean ignoreCase
 
     ) {

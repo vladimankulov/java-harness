@@ -1,12 +1,14 @@
 package com.harness.tool.impl;
 
 import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.guard.FileStateGuard;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.impl.GlobTool;
 import com.harness.tooling.impl.GrepTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -15,14 +17,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class GlobToolTest {
 
     @TempDir
     Path workspace;
 
-    private final ToolContext context = new ToolContext(new FileStateGuard());
+    private final ToolContext context =
+            TestPermissionConfig.context(new FileStateGuard());
 
     private GlobTool tool;
 
@@ -73,11 +76,13 @@ class GlobToolTest {
         create("old.java");
         create("new.java");
         Files.setLastModifiedTime(
-                workspace.resolve("old.java"), java.nio.file.attribute.FileTime.fromMillis(1_000_000));
+                workspace.resolve("old.java"),
+                java.nio.file.attribute.FileTime.fromMillis(1_000_000));
 
         ToolResult result = glob("*.java", null);
 
-        assertThat(result.content().indexOf("new.java")).isLessThan(result.content().indexOf("old.java"));
+        assertThat(result.content().indexOf("new.java"))
+                .isLessThan(result.content().indexOf("old.java"));
     }
 
     @Test
@@ -112,10 +117,9 @@ class GlobToolTest {
 
     @Test
     void выходЗаРабочуюПапкуЗапрещён() {
-        ToolResult result = glob("*.java", "../..");
-
-        assertThat(result.error()).isTrue();
-        assertThat(result.content()).contains("outside of the working directory");
+        var decision = tool.checkPermission(new GlobTool.Input("*.java", ".."), context);
+        assertThat(decision.behavior()).isEqualTo(PermissionBehavior.ASK);
+        assertThat(decision.reason()).contains("outside of the working directories");
     }
 
     /**

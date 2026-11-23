@@ -1,11 +1,14 @@
 package com.harness.tooling.impl;
 
+import com.harness.model.permission.PermissionDecision;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
+import com.harness.permission.inspectors.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.Ignored;
 import com.harness.tooling.guard.WorkspaceGuard;
 import com.harness.tooling.guard.WorkspaceViolationException;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -121,6 +124,15 @@ public class GlobTool implements Tool<GlobTool.Input> {
         return name() + ":" + pattern;
     }
 
+    @Override
+    public PermissionDecision checkPermission(Input input, ToolContext context) {
+        return PathInspector.checkRead(workspaceGuard, searchPath(input), context.permissions());
+    }
+
+    private String searchPath(Input input) {
+        return StringUtils.hasText(input.path) ? input.path : ".";
+    }
+
     public static PathMatcher matcherFor(String pattern) {
         final String globPattern = "glob:";
         final String findAll = "**/";
@@ -138,6 +150,7 @@ public class GlobTool implements Tool<GlobTool.Input> {
             @ToolParam(description = "Glob pattern, for example: **/*.java or **/*Tool*.java")
             String pattern,
             @ToolParam(required = false, description = "Directory to search in, defaults to the project root")
+            @Nullable
             String path
 
     ) {

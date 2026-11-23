@@ -35,7 +35,7 @@ class ContextSourcesTest {
         String status = new GitStatusProvider(в(project)).describe();
 
         assertThat(status).isNotNull();
-        assertThat(status).contains("Текущая ветка:", "Последние коммиты:");
+        assertThat(status).contains("Current branch:", "Last commits:");
     }
 
     @Test
@@ -65,7 +65,7 @@ class ContextSourcesTest {
         String loaded = new ProjectMemoryLoader(в(folder)).load();
 
         assertThat(loaded).isNotNull();
-        assertThat(loaded).contains("(обрезано)");
+        assertThat(loaded).contains("(truncated)");
         assertThat(loaded.length()).isLessThan(ProjectMemoryLoader.MAX_CHARS + 100);
     }
 }
