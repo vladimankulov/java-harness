@@ -70,6 +70,8 @@ public class ToolRegistry {
         }
         if (input == null) return ToolResult.error("you didn't specify input variables");
         try {
+            String invalid = tool.validateInput(input, toolContext);
+            if (invalid != null) return ToolResult.error(invalid);
             PermissionDecision decision = permissionGate.authorize(tool, input, toolContext);
             if (decision.behavior() != PermissionBehavior.ALLOW) {
                 return ToolResult.error("call is forbidden: " + decision.reason());
@@ -88,4 +90,6 @@ public class ToolRegistry {
             return "";
         }
     }
+
+
 }

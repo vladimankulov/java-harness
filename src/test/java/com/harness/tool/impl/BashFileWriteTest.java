@@ -1,16 +1,15 @@
 package com.harness.tool.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.TestPermissionConfig;
-import com.harness.agent.AgentProperties;
-import com.harness.permission.PermissionMode;
+import com.harness.agent.property.AgentProperty;
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.permission.enums.PermissionMode;
+import com.harness.model.tooling.ToolResult;
 import com.harness.permission.PermissionPrompt;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.ToolRegistry;
-import com.harness.tool.ToolResult;
-import com.harness.tool.WorkspaceGuard;
-
+import com.harness.tooling.ToolRegistry;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.guard.WorkspaceGuard;
+import com.harness.tooling.impl.BashTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,10 +19,15 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Текст в файл пишет Write: Bash такую команду отклоняет до вопроса человеку. */
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Текст в файл пишет Write: Bash такую команду отклоняет до вопроса человеку.
+ */
 class BashFileWriteTest {
 
-    @TempDir Path workspace;
+    @TempDir
+    Path workspace;
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -66,9 +70,10 @@ class BashFileWriteTest {
     @Test
     void writingCommandIsRejectedWithoutAskingTheUserAndPointsToWrite() {
         AtomicInteger questions = new AtomicInteger();
-        BashTool bash = new BashTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString(), true)));
+        BashTool bash = new BashTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
         ToolRegistry registry = TestPermissionConfig.registry(
-                List.of(bash), event -> {}, new FileStateCache(),
+                List.of(bash), event -> {
+                }, new FileStateGuard(),
                 TestPermissionConfig.properties(PermissionMode.DEFAULT, List.of(), List.of(), List.of()),
                 (tool, target, reason) -> {
                     questions.incrementAndGet();
@@ -78,7 +83,7 @@ class BashFileWriteTest {
         ToolResult result = registry.execute("Bash", "{\"command\": \"echo hi > notes.txt\"}");
 
         assertThat(result.error()).isTrue();
-        assertThat(result.content()).startsWith("Вызови Write").contains("notes.txt");
+        assertThat(result.content()).startsWith("Call Write tool").contains("notes.txt");
         assertThat(questions).hasValue(0);
         assertThat(workspace.resolve("notes.txt")).doesNotExist();
     }
@@ -86,12 +91,12 @@ class BashFileWriteTest {
     @Test
     void existingFileIsSentToReadThenEdit() throws Exception {
         java.nio.file.Files.writeString(workspace.resolve("notes.txt"), "old\n");
-        BashTool bash = new BashTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString(), true)));
+        BashTool bash = new BashTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
 
         String message = bash.validateInput(new BashTool.Input("echo new >> notes.txt", null, null),
-                TestPermissionConfig.context(new FileStateCache()));
+                TestPermissionConfig.context(new FileStateGuard()));
 
-        assertThat(message).startsWith("Вызови Read").contains("Edit");
+        assertThat(message).startsWith("Call Read").contains("Edit");
         assertThat(workspace.resolve("notes.txt")).hasContent("old");
     }
 
@@ -110,14 +115,17 @@ class BashFileWriteTest {
 
     @Test
     void listingInsideProjectIsReadWithoutQuestion() {
-        BashTool bash = new BashTool(new WorkspaceGuard(new AgentProperties(20, workspace.toString(), true)));
-        var context = TestPermissionConfig.context(new FileStateCache());
+        BashTool bash = new BashTool(new WorkspaceGuard(new AgentProperty(20, workspace.toString(), true)));
+        var context = TestPermissionConfig.context(new FileStateGuard());
         assertThat(BashTool.listedPath("dir target")).isEqualTo("target");
         assertThat(BashTool.listedPath("ls -la src/main")).isEqualTo("src/main");
         assertThat(BashTool.listedPath("dir target && del x")).isNull();
-        assertThat(bash.checkPermissions(new BashTool.Input("dir target", null, null), context).behavior())
-                .isEqualTo(com.harness.permission.PermissionBehavior.ALLOW);
-        assertThat(bash.checkPermissions(new BashTool.Input("dir C:\\Windows", null, null), context).behavior())
-                .isNotEqualTo(com.harness.permission.PermissionBehavior.ALLOW);
+        assertThat(bash.checkPermission(new BashTool.Input("dir target", null, null), context).behavior())
+                .isEqualTo(PermissionBehavior.ALLOW);
+        //windows dependent paths are not working inside macos because they are resolved to the root
+//        assertThat(bash.checkPermission(new BashTool.Input("dir C:\\Windows", null, null), context).behavior())
+//                .isNotEqualTo(PermissionBehavior.ALLOW);
+        assertThat(bash.checkPermission(new BashTool.Input("dir /Users", null, null), context).behavior())
+                .isNotEqualTo(PermissionBehavior.ALLOW);
     }
 }

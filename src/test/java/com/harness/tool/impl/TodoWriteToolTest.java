@@ -1,23 +1,23 @@
 package com.harness.tool.impl;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import com.harness.TestPermissionConfig;
 import com.harness.agent.event.AgentEvent;
-import com.harness.permission.PermissionBehavior;
-import com.harness.tool.FileStateCache;
-import com.harness.tool.TodoItem;
-import com.harness.tool.TodoStatus;
-import com.harness.tool.TodoStore;
-import com.harness.tool.ToolContext;
-import com.harness.tool.ToolResult;
-
+import com.harness.model.permission.enums.PermissionBehavior;
+import com.harness.model.tooling.TodoItem;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.model.tooling.enums.TodoStatus;
+import com.harness.tooling.TodoStore;
+import com.harness.tooling.guard.FileStateGuard;
+import com.harness.tooling.impl.TodoWriteTool;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.util.JsonHelper;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TodoWriteToolTest {
 
@@ -30,7 +30,7 @@ class TodoWriteToolTest {
     @BeforeEach
     void setUp() {
         store = new TodoStore(16_384);
-        context = TestPermissionConfig.context(new FileStateCache(), store);
+        context = TestPermissionConfig.context(new FileStateGuard(), store);
     }
 
     private static TodoItem item(String content, TodoStatus status) {
@@ -73,7 +73,9 @@ class TodoWriteToolTest {
         assertThat(store.todos()).isEmpty();
     }
 
-    /** Память уже пуста, а человеку итог показать надо: в событии то, что прислала модель. */
+    /**
+     * Память уже пуста, а человеку итог показать надо: в событии то, что прислала модель.
+     */
     @Test
     void вСобытиеУезжаетИтоговыйСписокАНеПустота() {
         tool.call(new TodoWriteTool.Input(List.of(
@@ -128,11 +130,13 @@ class TodoWriteToolTest {
     @Test
     void разрешенияНеСпрашиваются() {
         assertThat(tool.isReadOnly()).isTrue();
-        assertThat(tool.checkPermissions(new TodoWriteTool.Input(List.of()), context).behavior())
+        assertThat(tool.checkPermission(new TodoWriteTool.Input(List.of()), context).behavior())
                 .isEqualTo(PermissionBehavior.ALLOW);
     }
 
-    /** Схема — это обещание модели. Разбор обязан принимать ровно то, что в ней написано. */
+    /**
+     * Схема — это обещание модели. Разбор обязан принимать ровно то, что в ней написано.
+     */
     @Test
     void вСхемеСтатусыВТомЖеВидеЧтоИВРазборе() {
         String schema = tool.inputSchema();
@@ -145,7 +149,9 @@ class TodoWriteToolTest {
         }
     }
 
-    /** Сверх обещанного разбор снисходителен: модель охотно пишет строчными. */
+    /**
+     * Сверх обещанного разбор снисходителен: модель охотно пишет строчными.
+     */
     @Test
     void статусыРазбираютсяВЛюбомРегистре() {
         String fromModel = """

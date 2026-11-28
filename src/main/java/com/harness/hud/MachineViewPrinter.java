@@ -9,8 +9,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.harness.tool.TodoItem;
-import com.harness.tool.TodoStatus;
+import com.harness.model.tooling.TodoItem;
+import com.harness.model.tooling.enums.TodoStatus;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;

@@ -7,6 +7,7 @@ import com.harness.model.permission.enums.PermissionSource;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.permission.PermissionUpdate;
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.util.json.schema.JsonSchemaGenerator;
 
 import java.util.List;
@@ -30,6 +31,10 @@ public interface Tool<I> {
 
     default String inputSchema() {
         return JsonSchemaGenerator.generateForType(inputType());
+    }
+
+    default @Nullable String validateInput(I input, ToolContext context) {
+        return null;
     }
 
     default PermissionDecision checkPermission(I input, ToolContext context) {

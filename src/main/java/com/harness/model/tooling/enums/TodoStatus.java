@@ -1,4 +1,4 @@
-package com.harness.tool;
+package com.harness.model.tooling.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 

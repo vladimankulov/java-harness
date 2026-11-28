@@ -98,29 +98,36 @@ public class FileEditTool implements Tool<FileEditTool.Input> {
             return ToolResult.error("Cannot edit file '%s': %s".formatted(input.filePath, refusal));
         }
 
-        String before;
+        String raw;
 
         try {
-            before = Files.readString(toFile);
+            raw = Files.readString(toFile);
         } catch (IOException e) {
             return ToolResult.error(
                     "Failed to read the file: '%s', err: %s".formatted(input.filePath, e.getMessage()));
         }
 
+        // Read показывает строки без \r, и модель присылает текст с \n. Сравниваем по \n,
+        // а записываем с теми концами строк, какие были в файле.
+        boolean crlf = raw.contains("\r\n");
+        String before = lf(raw);
+        String oldString = lf(input.oldString());
+        String newString = lf(input.newString());
         int occurrences = StringUtils.countOccurrencesOf(before, input.oldString);
-
         if (occurrences == 0) {
-            return ToolResult.error("Old string not found in the file '%s'. Use Read tool to reread the file".formatted(input.filePath));
+            return ToolResult.error(("string not found in %s. Read the file using Read tool"
+                    + " and copy fragment exactly").formatted(input.filePath()));
         }
-
-        if (occurrences > 1 && !Boolean.TRUE.equals(input.replaceAll)) {
+        boolean replaceAll = Boolean.TRUE.equals(input.replaceAll());
+        if (occurrences > 1 && !replaceAll) {
             return ToolResult.error(
                     "Old string found %d times in the file '%s'. Either provide a larger string to more surrounding context to make it unique, or set replaceAll to change every occurrence."
                             .formatted(occurrences, input.filePath));
         }
-        String after = before.replace(input.oldString, input.newString);
+
+        String after = before.replace(oldString, newString);
         try {
-            Files.writeString(toFile, after);
+            Files.writeString(toFile, crlf ? after.replace("\n", "\r\n") : after);
         } catch (IOException e) {
             return ToolResult.error(
                     "Failed to write the file: '%s', err: %s".formatted(input.filePath, e.getMessage()));
@@ -143,5 +150,9 @@ public class FileEditTool implements Tool<FileEditTool.Input> {
             Boolean replaceAll
     ) {
 
+    }
+
+    private static String lf(String text) {
+        return text.replace("\r\n", "\n");
     }
 }

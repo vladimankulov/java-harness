@@ -1,17 +1,17 @@
 package com.harness.agent;
 
-import com.harness.tool.impl.BashTool;
-import org.springframework.context.annotation.Import;
-import fixtures.TestPermissionConfig;
 import com.harness.agent.event.AgentEvent;
 import com.harness.tooling.Tool;
+import com.harness.tooling.impl.BashTool;
 import fixtures.RecordingEventPublisher;
 import fixtures.TestAgents;
+import fixtures.TestPermissionConfig;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -35,7 +35,9 @@ import static org.assertj.core.api.Assertions.fail;
 @ActiveProfiles("test")
 class ContextUsageOllamaTest {
 
-    /** Один git status с ключами, без цепочек: он только читает. */
+    /**
+     * Один git status с ключами, без цепочек: он только читает.
+     */
     private static final Pattern FRESH_STATUS = Pattern.compile("(?i)^\\s*git\\s+status(?:\\s+-[-\\w]+)*\\s*$");
 
     @Autowired
@@ -53,6 +55,7 @@ class ContextUsageOllamaTest {
             public void publishEvent(Object event) {
                 super.publishEvent(event);
                 if (event instanceof AgentEvent.ToolCallStarted call) {
+                    // description() — текст для HUD вида «[Bash] git status»; регэкспам нужна голая команда.
                     command = call.description();
                     boolean allowed = call.toolName().equals("Bash")
                             && (BashTool.asksForBranch(command) || FRESH_STATUS.matcher(command).matches());

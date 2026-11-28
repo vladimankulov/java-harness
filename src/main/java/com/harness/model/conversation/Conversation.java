@@ -1,5 +1,6 @@
 package com.harness.model.conversation;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.messages.*;
 import org.springframework.util.StringUtils;
 
@@ -21,7 +22,7 @@ public class Conversation {
         }
     }
 
-    public void addAssistantMessage(AssistantMessage assistantMessage) {
+    public void addAssistantMessage(@Nullable AssistantMessage assistantMessage) {
         if (assistantMessage != null) {
             this.messages.add(assistantMessage);
         }
@@ -34,9 +35,15 @@ public class Conversation {
         return messages;
     }
 
-    public void addToolResponses(ToolResponseMessage toolResponseMessage) {
+    public void addToolResponses(@Nullable ToolResponseMessage toolResponseMessage) {
         if (toolResponseMessage != null) {
             this.messages.add(toolResponseMessage);
+        }
+    }
+
+    public void addSystemReminder(String systemReminder) {
+        if (StringUtils.hasText(systemReminder)) {
+            this.messages.add(new UserMessage("<system-reminder>\n%s\n</system-reminder>".formatted(systemReminder)));
         }
     }
 }

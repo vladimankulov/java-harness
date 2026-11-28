@@ -1,6 +1,7 @@
-package com.harness.tool;
+package com.harness.model.tooling;
 
 
+import com.harness.model.tooling.enums.TodoStatus;
 import org.springframework.ai.tool.annotation.ToolParam;
 
 /**

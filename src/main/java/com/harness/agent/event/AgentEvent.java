@@ -1,6 +1,6 @@
 package com.harness.agent.event;
 
-import com.harness.tool.TodoItem;
+import com.harness.model.tooling.TodoItem;
 
 import java.time.Duration;
 import java.util.List;

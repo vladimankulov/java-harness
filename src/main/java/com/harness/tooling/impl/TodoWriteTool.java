@@ -1,11 +1,16 @@
-package com.harness.tool.impl;
+package com.harness.tooling.impl;
 
 import com.harness.agent.event.AgentEvent;
-import com.harness.tool.*;
+import com.harness.model.tooling.TodoItem;
+import com.harness.model.tooling.ToolContext;
+import com.harness.model.tooling.ToolResult;
+import com.harness.model.tooling.enums.TodoStatus;
+import com.harness.tooling.Tool;
 import org.jspecify.annotations.Nullable;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -31,29 +36,29 @@ public class TodoWriteTool implements Tool<TodoWriteTool.Input> {
         return """
                 Create and manage a structured task list for the current session.
                 Use it to track progress on multi-step work and to keep the plan visible.
-
+                
                 ## When to use
                 - The task takes three or more distinct steps
                 - The user gave several things to do at once (numbered or comma-separated)
                 - You are starting a step — mark it IN_PROGRESS BEFORE the work, not after
                 - You finished a step — mark it COMPLETED immediately, do not batch
-
+                
                 ## When not to use
                 - A single straightforward action
                 - A purely conversational or informational request
-
+                
                 ## Task states
                 - PENDING: not started
                 - IN_PROGRESS: being worked on right now. EXACTLY ONE at a time
                 - COMPLETED: fully finished
-
+                
                 Only mark a step COMPLETED when it is really done. If you hit an error,
                 leave it IN_PROGRESS and add a task for what blocks you.
-
+                
                 ## Rules
                 - Send the whole list every time. It replaces the previous one
                 - Every item needs both content ("Run the tests") and activeForm ("Running the tests")
-
+                
                 ## Example
                 User: Add a dark mode toggle. Run the tests when you are done.
                 Assistant: *calls TodoWrite before touching anything:*
@@ -64,9 +69,11 @@ public class TodoWriteTool implements Tool<TodoWriteTool.Input> {
 
     }
 
-    /** Строку вызова не показываем: экран нарисует сам список по событию. */
+    /**
+     * Строку вызова не показываем: экран нарисует сам список по событию.
+     */
     @Override
-    public String renderToolUseMessage(Input input) {
+    public String renderToolUsage(Input input) {
         return "";
     }
 
@@ -92,11 +99,10 @@ public class TodoWriteTool implements Tool<TodoWriteTool.Input> {
     }
 
 
-
     private @Nullable String findProblem(@Nullable List<TodoItem> todos) {
         if (todos == null) return "не передан список задач";
         for (TodoItem item : todos) {
-            if (item == null || item.content() == null || item.content().isBlank()) {
+            if (item == null || !StringUtils.hasText(item.content())) {
                 return "у задачи пустое поле content";
             }
             if (item.status() == null) {
@@ -105,21 +111,6 @@ public class TodoWriteTool implements Tool<TodoWriteTool.Input> {
         }
         return null;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     public record Input(

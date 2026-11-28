@@ -10,6 +10,7 @@ import com.harness.model.permission.enums.PermissionMode;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.permission.PermissionPrompt;
+import com.harness.tooling.TodoStore;
 import com.harness.tooling.Tool;
 import com.harness.tooling.ToolRegistry;
 import com.harness.tooling.guard.FileStateGuard;
@@ -92,7 +93,7 @@ class BashMissionOllamaTest {
                         new SpringAiToolCallbackAdapter(registry),
                         properties,
                         context,
-                        new com.harness.tool.TodoStore(16_384));
+                        new TodoStore(16_384));
 
         String answer = agent.run("Запусти тесты проекта и скажи, всё ли зелено.");
 

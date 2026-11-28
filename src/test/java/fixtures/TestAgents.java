@@ -7,11 +7,12 @@ import com.harness.context.ContextManager;
 import com.harness.context.GitStatusProvider;
 import com.harness.context.ProjectMemoryLoader;
 import com.harness.context.SystemPromptBuilder;
-import com.harness.tool.TodoStore;
+import com.harness.tooling.TodoStore;
 import com.harness.tooling.Tool;
 import com.harness.tooling.ToolRegistry;
 import com.harness.tooling.guard.FileStateGuard;
 import org.springframework.ai.chat.model.ChatModel;
+
 import java.util.List;
 
 /**

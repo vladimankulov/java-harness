@@ -4,9 +4,9 @@ import com.harness.agent.event.AgentEvent;
 import com.harness.agent.property.AgentProperty;
 import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
 import com.harness.context.ContextManager;
-import com.harness.tool.TodoStore;
 import com.harness.model.conversation.Conversation;
 import com.harness.model.tooling.ToolResult;
+import com.harness.tooling.TodoStore;
 import com.harness.tooling.ToolRegistry;
 import org.jspecify.annotations.Nullable;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -95,7 +95,7 @@ public class Agent {
         for (AssistantMessage.ToolCall toolCall : assistantMessage.getToolCalls()) {
             ToolResult toolResult = toolRegistry.execute(toolCall.name(), toolCall.arguments());
             todos.countToolResult(toolCall.arguments(), toolResult);
-            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(),toolCall.name(),toolResult.content()));
+            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(), toolCall.name(), toolResult.content()));
         }
         return ToolResponseMessage.builder().responses(toolResponses).build();
     }

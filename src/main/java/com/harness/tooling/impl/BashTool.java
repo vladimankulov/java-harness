@@ -1,9 +1,11 @@
 package com.harness.tooling.impl;
 
 import com.harness.model.permission.PermissionDecision;
+import com.harness.model.permission.enums.PermissionBehavior;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.permission.inspectors.BashInspector;
+import com.harness.permission.inspectors.PathInspector;
 import com.harness.tooling.Tool;
 import com.harness.tooling.guard.WorkspaceGuard;
 import org.jspecify.annotations.Nullable;
@@ -22,6 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Component
 public class BashTool implements Tool<BashTool.Input> {
@@ -32,6 +36,18 @@ public class BashTool implements Tool<BashTool.Input> {
     private static final int DEFAULT_TIMEOUT_PROCESS = 120;//seconds
     private static final int MAX_TIMEOUT_PROCESS = 600; //seconds
     private static final int MIN_TIMEOUT_PROCESS = 1; //seconds
+    private static final Pattern GIT_BRANCH_QUESTION = Pattern.compile(
+            "(?i)^\\s*git\\s+(?:branch(?:\\s+--show-current)?|rev-parse\\s+--abbrev-ref\\s+HEAD|symbolic-ref\\s+(?:--short\\s+)?HEAD)\\s*$");
+    private static final Pattern TEXT_REDIRECT = Pattern.compile(
+            "(?i)^\\s*[@(]?\\s*(?:echo|printf|cat|type|write-output|write-host)\\b.*?(?<![0-9&])>>?(?!&)\\s*(\"[^\"]*\"|'[^']*'|[^\\s<>()]+)");
+    private static final Pattern WRITING_COMMAND = Pattern.compile(
+            "(?i)^\\s*(?:set-content|add-content|out-file|tee-object|tee|touch|copy\\s+con|fsutil\\s+file\\s+createnew|new-item(?!.*-itemtype\\s+[\"']?directory))\\b"
+                    + "(?:\\s+-(?:path|filepath|literalpath|a|append))*\\s*(\"[^\"]*\"|'[^']*'|[^\\s<>()-][^\\s<>()]*)?");
+    private static final List<String> NOWHERE = List.of("nul", "nul:", "$null", "/dev/null");
+    private static final Pattern MAKE_DIRECTORY = Pattern.compile(
+            "(?i)^\\s*(?:mkdir|md|new-item(?=.*-itemtype\\s+[\"']?directory))\\b");
+    private static final Pattern LISTING = Pattern.compile(
+            "(?i)^\\s*(?:dir|ls)(?:\\s+(?:--?[a-z]+|/[a-z]+))*\\s+(\"[^\"]+\"|[^\\s\"]+)\\s*$");
 
     public BashTool(WorkspaceGuard workspaceGuard) {
         this.workspaceGuard = workspaceGuard;
@@ -56,6 +72,38 @@ public class BashTool implements Tool<BashTool.Input> {
     @Override
     public Class<Input> inputType() {
         return BashTool.Input.class;
+    }
+
+    @Override
+    public @Nullable String validateInput(Input input, ToolContext context) {
+        if (asksForBranch(input.command())) {
+            return """
+                    Current branch exists in the `# Repository` system prompt section,
+                    in the same section you can find changed files at the start of the conversation.
+                    Give response based on this information.
+                    Bash doesn't show current branch, command hasn't been executed.
+                    """;
+        }
+        String target = authoredFileTarget(input.command());
+
+        if (target == null) {
+            if (!makesDirectory(input.command())) return null;
+            return """
+                    Call Write tool for a file you are trying to put in the current directory. Missing directories Write tool will create itself.
+                    If you need a clean directory - use Write tool to create an empty .gitkeep file.
+                    Bash doesn't create directories, command hasn't been executed.
+                    """;
+        }
+        if (exists(target)) {
+            return """
+                    Call Read tool for the \\"%s\\", then Edit - to change the file or Write to rewrite it completely.
+                    Bash doesn't write text into files, command hasn't been executed
+                    """.formatted(target);
+        }
+        return """
+                Call Write tool: filePath:\\"%s\\", content: file's text. Missing directories Write tool will create itself.
+                Bash doesn't write text into files, command hasn't been executed.
+                """.formatted(target);
     }
 
     @Override
@@ -142,7 +190,7 @@ public class BashTool implements Tool<BashTool.Input> {
 
     @Override
     public String renderToolUsage(Input input) {
-        return "[%s] %s".formatted(name(), input.command);
+        return StringUtils.hasText(input.command) ? input.command : "";
     }
 
     @Override
@@ -152,7 +200,11 @@ public class BashTool implements Tool<BashTool.Input> {
 
     @Override
     public PermissionDecision checkPermission(Input input, ToolContext context) {
-        return BashInspector.check(input.command, context.permissions());
+        PermissionDecision decision = BashInspector.check(input.command, context.permissions());
+        String listed = listedPath(input.command());
+        if (listed == null || decision.behavior() != PermissionBehavior.ASK || decision.askAlways()) return decision;
+        PermissionDecision permissionDecision = PathInspector.checkRead(workspaceGuard, listed, context.permissions());
+        return permissionDecision;
     }
 
     public int getMaxOutputCharacters() {
@@ -163,6 +215,7 @@ public class BashTool implements Tool<BashTool.Input> {
             @ToolParam(description = "Shell command to execute")
             String command,
             @ToolParam(required = false, description = "What this command does")
+            @Nullable
             String description,
             @ToolParam(required = false, description = "Timeout in seconds, default 120, max is 600")
             @Nullable
@@ -204,5 +257,67 @@ public class BashTool implements Tool<BashTool.Input> {
         String javaBin = Path.of(javaHome, "bin").toString();
         String path = environment.getOrDefault(pathKey, "");
         if (!path.contains(javaBin)) environment.put(pathKey, javaBin + File.pathSeparator + path);
+    }
+
+    public static boolean asksForBranch(@Nullable String command) {
+        if (command == null) return false;
+        for (String part : command.split("&&|\\|\\||[;|\\r\\n]")) {
+            if (GIT_BRANCH_QUESTION.matcher(part).matches()) return true;
+        }
+        return false;
+    }
+
+    public static boolean makesDirectory(@Nullable String command) {
+        if (command == null) return false;
+        Matcher segments = Pattern.compile("[^;|&\\r\\n]+").matcher(maskQuoted(command));
+        while (segments.find()) {
+            if (MAKE_DIRECTORY.matcher(segments.group()).find()) return true;
+        }
+        return false;
+    }
+
+    public static @Nullable String listedPath(@Nullable String command) {
+        if (command == null) return null;
+        Matcher m = LISTING.matcher(command);
+        return m.matches() ? m.group(1).replaceAll("^\"|\"$", "") : null;
+    }
+
+    public static @Nullable String authoredFileTarget(@Nullable String command) {
+        if (command == null) return null;
+        String masked = maskQuoted(command);
+        Matcher segments = Pattern.compile("[^;|&\\r\\n]+").matcher(masked);
+        while (segments.find()) {
+            for (Pattern pattern : List.of(TEXT_REDIRECT, WRITING_COMMAND)) {
+                Matcher m = pattern.matcher(masked).region(segments.start(), segments.end()).useAnchoringBounds(true);
+                if (!m.find()) continue;
+                String target = m.group(1) == null ? "" : command.substring(m.start(1), m.end(1)).replaceAll("^[\"']|[\"']$", "");
+                if (NOWHERE.contains(target.toLowerCase(Locale.ROOT))) continue;
+                return target.isEmpty() ? "путь к файлу" : target;
+            }
+        }
+        return null;
+    }
+
+    private static String maskQuoted(String command) {
+        StringBuilder out = new StringBuilder(command.length());
+        char quote = 0;
+        for (char c : command.toCharArray()) {
+            if (quote != 0) {
+                out.append(c == quote ? c : '_');
+                if (c == quote) quote = 0;
+            } else {
+                if (c == '"' || c == '\'') quote = c;
+                out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
+    private boolean exists(String target) {
+        try {
+            return Files.exists(workspaceGuard.resolve(target));
+        } catch (RuntimeException unresolvable) {
+            return false;
+        }
     }
 }

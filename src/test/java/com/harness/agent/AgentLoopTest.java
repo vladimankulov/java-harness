@@ -3,6 +3,7 @@ package com.harness.agent;
 import com.harness.model.tooling.ToolContext;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.Tool;
+import com.harness.tooling.impl.TodoWriteTool;
 import fixtures.RecordingEventPublisher;
 import fixtures.ScriptedChatModel;
 import org.junit.jupiter.api.Test;
@@ -169,13 +170,15 @@ class AgentLoopTest {
                       {"content":"спросить формат","status":"IN_PROGRESS","activeForm":"Спрашиваю формат"},
                       {"content":"записать отчёт","status":"PENDING","activeForm":"Пишу отчёт"}]}""";
 
-    /** Первый ход: план и вопрос человеку. Второй — его ответ указанной длины. */
+    /**
+     * Первый ход: план и вопрос человеку. Второй — его ответ указанной длины.
+     */
     private List<String> userTextsAfterAnswer(int answerLength) {
         ScriptedChatModel model = new ScriptedChatModel()
                 .then(toolCall("call-1", "TodoWrite", PLAN))
                 .then(new AssistantMessage("В каком формате нужен отчёт?"))
                 .then(new AssistantMessage("Понял."));
-        Agent agent = agent(model, publisher, new com.harness.tool.impl.TodoWriteTool(publisher));
+        Agent agent = agent(model, publisher, new TodoWriteTool(publisher));
 
         agent.run("Прочитай файлы и запиши отчёт.");
         agent.run("x".repeat(answerLength));
@@ -186,18 +189,22 @@ class AgentLoopTest {
                 .toList();
     }
 
-    /** План уже есть — реплика человека уходит как есть, и врезки за ней нет. */
+    /**
+     * План уже есть — реплика человека уходит как есть, и врезки за ней нет.
+     */
     @Test
     void сПланомРепликаЧеловекаБезВрезки() {
         assertThat(userTextsAfterAnswer(13_000).getLast()).isEqualTo("x".repeat(13_000));
     }
 
-    /** Плана нет — мягкое напоминание идёт отдельной репликой сразу за репликой человека. */
+    /**
+     * Плана нет — мягкое напоминание идёт отдельной репликой сразу за репликой человека.
+     */
     @Test
     void безПланаМягкоеНапоминаниеОтдельнойРепликой() {
         ScriptedChatModel model = new ScriptedChatModel().then(new AssistantMessage("Понял."));
 
-        agent(model, publisher, new com.harness.tool.impl.TodoWriteTool(publisher)).run("прочитай файлы");
+        agent(model, publisher, new TodoWriteTool(publisher)).run("прочитай файлы");
 
         List<String> userTexts = model.lastPrompt().getInstructions().stream()
                 .filter(message -> message.getMessageType() == MessageType.USER)
@@ -223,7 +230,7 @@ class AgentLoopTest {
                 .then(toolCall("call-2", "Spy", "{\"value\":\"big.txt\"}"))
                 .then(new AssistantMessage("Готово."));
 
-        agent(model, publisher, tool, new com.harness.tool.impl.TodoWriteTool(publisher)).run("прочитай big.txt");
+        agent(model, publisher, tool, new TodoWriteTool(publisher)).run("прочитай big.txt");
 
         List<Message> request = model.lastPrompt().getInstructions();
         Message last = request.getLast();
@@ -231,7 +238,7 @@ class AgentLoopTest {
         assertThat(beforeLast.getResponses().getFirst().responseData()).isEqualTo("x".repeat(14_000));
         assertThat(last.getMessageType()).isEqualTo(MessageType.USER);
         assertThat(last.getText())
-                .startsWith("<system-reminder>\nПомни о плане")
+                .startsWith("<system-reminder>\nRemember about the plan")
                 .contains("2. [IN_PROGRESS] спросить формат")
                 .endsWith("</system-reminder>");
     }
