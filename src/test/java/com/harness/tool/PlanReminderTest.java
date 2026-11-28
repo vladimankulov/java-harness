@@ -67,7 +67,7 @@ class PlanReminderTest {
                 .startsWith("Remember about the plan")
                 .contains("1. [IN_PROGRESS] прочитать файлы")
                 .contains("2. [PENDING] записать число")
-                .contains("«прочитать файлы», then «записать число»");
+                .contains("«прочитать файлы», followed by «записать число»");
     }
 
     /**

@@ -27,7 +27,7 @@ public class TodoStore {
             Its to early to respond to the user. Right now, call the TodoWrite tool.
             Mark the items that are already done as COMPLETED, and next items to IN_PROGRESS.
             Then, execute that item using the appropriate tool.
-            The upcoming items are: "%s", followed by "%s".""";
+            The upcoming items are: «%s», followed by «%s».""";
 
     private int tokensSincePlanSeen;
     private final int reminderAfterTokens;
