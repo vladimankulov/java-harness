@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
+//todo: a better name for the class is PermissionFileStorage
 public class OrderCollector {
 
     private final WorkspaceGuard workspaceGuard;

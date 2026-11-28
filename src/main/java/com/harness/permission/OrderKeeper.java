@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Set;
 
 @Component
+//todo: a better name for the class is PermissionManager
 public class OrderKeeper {
 
     private static final Set<PermissionSource> FORBIDDEN_TO_WRITE = Set.of(PermissionSource.APPLICATION, PermissionSource.PROJECT, PermissionSource.USER);
