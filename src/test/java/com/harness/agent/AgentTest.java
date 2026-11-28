@@ -51,7 +51,10 @@ public class AgentTest {
         assertThat(agent.run(firstUserQuestion)).isEqualTo(firstResponse);
         assertThat(agent.run(secondUserQuestion)).isEqualTo(secondResponse);
 
-        List<@Nullable String> secondCall = model.lastPrompt().getInstructions().stream().map(Message::getText).toList();
+        List<@Nullable String> secondCall = model.lastPrompt().getInstructions().stream()
+                .map(Message::getText)
+                .filter(text -> !text.startsWith("<system-reminder>"))
+                .toList();
         assertThat(secondCall)
                 //second call is the prompt without model last response
                 .containsExactly(secondCall.getFirst(),

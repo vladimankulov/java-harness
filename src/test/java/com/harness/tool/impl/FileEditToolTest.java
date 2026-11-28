@@ -63,6 +63,16 @@ class FileEditToolTest {
      * она правит содержимое, которое придумала.
      */
     @Test
+    void multiLineEditMatchesCrlfFileAndKeepsItsLineEndings() throws IOException {
+        Path file = прочитанный("notes.md", "# Notes\r\n\r\nfirst\r\nlast\r\n");
+
+        ToolResult result = edit("notes.md", "first\nlast\n", "first\nlast\nadded\n", null);
+
+        assertThat(result.error()).isFalse();
+        assertThat(Files.readString(file)).isEqualTo("# Notes\r\n\r\nfirst\r\nlast\r\nadded\r\n");
+    }
+
+    @Test
     void непрочитанныйФайлПравитьНельзя() throws IOException {
         Files.writeString(workspace.resolve("Agent.java"), "class Agent {}\n");
 

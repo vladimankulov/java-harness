@@ -91,7 +91,8 @@ class BashMissionOllamaTest {
                         registry,
                         new SpringAiToolCallbackAdapter(registry),
                         properties,
-                        context);
+                        context,
+                        new com.harness.tool.TodoStore(16_384));
 
         String answer = agent.run("Запусти тесты проекта и скажи, всё ли зелено.");
 

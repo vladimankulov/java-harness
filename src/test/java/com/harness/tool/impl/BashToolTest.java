@@ -189,4 +189,15 @@ class BashToolTest {
         assertThat(behaviorFor("git log --output=result.txt")).isEqualTo(PermissionBehavior.ASK);
         assertThat(behaviorFor("git status && echo hello")).isEqualTo(PermissionBehavior.ASK);
     }
+
+    /** Ветка уже в разделе Repository: за ней Bash не ходит. Создание ветки и git status — не вопрос о ветке. */
+    @Test
+    void branchQuestionIsRejectedBeforeRun() {
+        assertThat(tool.validateInput(new BashTool.Input("git branch --show-current", null, null), context))
+                .contains("Repository");
+        assertThat(BashTool.asksForBranch("git branch && git status")).isTrue();
+        assertThat(BashTool.asksForBranch("git rev-parse --abbrev-ref HEAD")).isTrue();
+        assertThat(BashTool.asksForBranch("git branch new-branch")).isFalse();
+        assertThat(BashTool.asksForBranch("git status --short")).isFalse();
+    }
 }

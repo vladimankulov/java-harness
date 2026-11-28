@@ -97,6 +97,12 @@ public class Hud {
         machinePrinter.showPermissionResolved(forToolName(event.toolName()), event.granted());
     }
 
+    /** План изменился. Что прислал инструмент, то и рисуем: значки и цвета выбирает экран. */
+    @EventListener
+    public void onTodosUpdated(AgentEvent.TodosUpdated event) {
+        machinePrinter.showTodos(event.todos());
+    }
+
     @EventListener
     public void onToolCallFinished(AgentEvent.ToolCallFinished event) {
         machinePrinter.showToolCallFinished(event.error(), event.preview(), event.duration());

@@ -163,4 +163,76 @@ class AgentLoopTest {
         assertThat(toolMessageOf(model.lastPrompt().getInstructions()).getResponses().getFirst().responseData())
                 .contains("Tool by name: {} not found");
     }
+
+    private static final String PLAN = """
+            {"todos":[{"content":"прочитать файлы","status":"COMPLETED","activeForm":"Читаю файлы"},
+                      {"content":"спросить формат","status":"IN_PROGRESS","activeForm":"Спрашиваю формат"},
+                      {"content":"записать отчёт","status":"PENDING","activeForm":"Пишу отчёт"}]}""";
+
+    /** Первый ход: план и вопрос человеку. Второй — его ответ указанной длины. */
+    private List<String> userTextsAfterAnswer(int answerLength) {
+        ScriptedChatModel model = new ScriptedChatModel()
+                .then(toolCall("call-1", "TodoWrite", PLAN))
+                .then(new AssistantMessage("В каком формате нужен отчёт?"))
+                .then(new AssistantMessage("Понял."));
+        Agent agent = agent(model, publisher, new com.harness.tool.impl.TodoWriteTool(publisher));
+
+        agent.run("Прочитай файлы и запиши отчёт.");
+        agent.run("x".repeat(answerLength));
+
+        return model.lastPrompt().getInstructions().stream()
+                .filter(message -> message.getMessageType() == MessageType.USER)
+                .map(Message::getText)
+                .toList();
+    }
+
+    /** План уже есть — реплика человека уходит как есть, и врезки за ней нет. */
+    @Test
+    void сПланомРепликаЧеловекаБезВрезки() {
+        assertThat(userTextsAfterAnswer(13_000).getLast()).isEqualTo("x".repeat(13_000));
+    }
+
+    /** Плана нет — мягкое напоминание идёт отдельной репликой сразу за репликой человека. */
+    @Test
+    void безПланаМягкоеНапоминаниеОтдельнойРепликой() {
+        ScriptedChatModel model = new ScriptedChatModel().then(new AssistantMessage("Понял."));
+
+        agent(model, publisher, new com.harness.tool.impl.TodoWriteTool(publisher)).run("прочитай файлы");
+
+        List<String> userTexts = model.lastPrompt().getInstructions().stream()
+                .filter(message -> message.getMessageType() == MessageType.USER)
+                .map(Message::getText)
+                .toList();
+        assertThat(userTexts).hasSize(2);
+        assertThat(userTexts.getFirst()).isEqualTo("прочитай файлы");
+        assertThat(userTexts.getLast())
+                .startsWith("<system-reminder>\nThe TodoWrite tool")
+                .endsWith("</system-reminder>");
+    }
+
+    /**
+     * План есть, а ответ инструмента большой — план идёт отдельной репликой после ответов.
+     * Сам ответ не трогаем: Ollama при переполнении выкидывает начало разговора, и хвост
+     * ответа без него модель читает как данные. Отдельную реплику — как ход, на который надо ответить.
+     */
+    @Test
+    void напоминаниеОПланеОтдельнойРепликойПослеОтветов() {
+        SpyTool tool = new SpyTool(ToolResult.ok("x".repeat(14_000)));
+        ScriptedChatModel model = new ScriptedChatModel()
+                .then(toolCall("call-1", "TodoWrite", PLAN))
+                .then(toolCall("call-2", "Spy", "{\"value\":\"big.txt\"}"))
+                .then(new AssistantMessage("Готово."));
+
+        agent(model, publisher, tool, new com.harness.tool.impl.TodoWriteTool(publisher)).run("прочитай big.txt");
+
+        List<Message> request = model.lastPrompt().getInstructions();
+        Message last = request.getLast();
+        ToolResponseMessage beforeLast = (ToolResponseMessage) request.get(request.size() - 2);
+        assertThat(beforeLast.getResponses().getFirst().responseData()).isEqualTo("x".repeat(14_000));
+        assertThat(last.getMessageType()).isEqualTo(MessageType.USER);
+        assertThat(last.getText())
+                .startsWith("<system-reminder>\nПомни о плане")
+                .contains("2. [IN_PROGRESS] спросить формат")
+                .endsWith("</system-reminder>");
+    }
 }

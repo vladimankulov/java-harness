@@ -4,6 +4,7 @@ import com.harness.agent.event.AgentEvent;
 import com.harness.agent.property.AgentProperty;
 import com.harness.agent.tool.adapter.SpringAiToolCallbackAdapter;
 import com.harness.context.ContextManager;
+import com.harness.tool.TodoStore;
 import com.harness.model.conversation.Conversation;
 import com.harness.model.tooling.ToolResult;
 import com.harness.tooling.ToolRegistry;
@@ -28,19 +29,21 @@ public class Agent {
 
     private final ApplicationEventPublisher publisher;
 
+    private final TodoStore todos;
     private final Conversation conversation;
     private final ToolRegistry toolRegistry;
     private final AgentProperty agentProperties;
     private final SpringAiToolCallbackAdapter springAiToolAdapter;
 
 
-    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher, ToolRegistry toolRegistry, SpringAiToolCallbackAdapter springAiToolAdapter, AgentProperty agentProperties, ContextManager contextManager) {
+    public Agent(ChatModel chatModel, ApplicationEventPublisher publisher, ToolRegistry toolRegistry, SpringAiToolCallbackAdapter springAiToolAdapter, AgentProperty agentProperties, ContextManager contextManager, TodoStore todos) {
         this.chatModel = chatModel;
         this.publisher = publisher;
         this.toolRegistry = toolRegistry;
         this.springAiToolAdapter = springAiToolAdapter;
         this.agentProperties = agentProperties;
         this.conversation = new Conversation(contextManager.systemPrompt());
+        this.todos = todos;
     }
 
     public Conversation conversation() {
@@ -58,6 +61,8 @@ public class Agent {
     public String run(String userMessage) {
         Instant startTime = Instant.now();
         conversation.addUserMessage(userMessage);
+        todos.reminderAfterUserMessage().ifPresent(conversation::addSystemReminder);
+
         publisher.publishEvent(new AgentEvent.TurnStarted(userMessage));
         for (int iteration = 1; iteration <= agentProperties.maxTurns(); iteration++) {
             AssistantMessage assistantMessage = askModel();
@@ -68,6 +73,7 @@ public class Agent {
                 return assistantMessage.getText();
             }
             conversation.addToolResponses(executeAll(assistantMessage));
+            todos.reminderAfterToolResults().ifPresent(conversation::addSystemReminder);
         }
         publisher.publishEvent(new AgentEvent.TurnLimitReached(agentProperties.maxTurns()));
         publisher.publishEvent(new AgentEvent.TurnFinished(Duration.between(startTime, Instant.now()), agentProperties.maxTurns()));
@@ -88,7 +94,8 @@ public class Agent {
         List<ToolResponseMessage.ToolResponse> toolResponses = new ArrayList<>();
         for (AssistantMessage.ToolCall toolCall : assistantMessage.getToolCalls()) {
             ToolResult toolResult = toolRegistry.execute(toolCall.name(), toolCall.arguments());
-            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(), toolCall.name(), toolResult.content()));
+            todos.countToolResult(toolCall.arguments(), toolResult);
+            toolResponses.add(new ToolResponseMessage.ToolResponse(toolCall.id(),toolCall.name(),toolResult.content()));
         }
         return ToolResponseMessage.builder().responses(toolResponses).build();
     }

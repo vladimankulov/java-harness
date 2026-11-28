@@ -13,7 +13,6 @@ import com.harness.tooling.guard.WorkspaceGuard;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 import java.util.Map;
@@ -41,22 +40,32 @@ public class TestPermissionConfig {
         return new PermissionProperty(mode, allow, deny, ask, List.of());
     }
 
-    public static ToolContext context(FileStateGuard cache) {
-        var guard = new WorkspaceGuard(new AgentProperty(20, ".", true));
-        var collector = new OrderCollector(guard, properties(PermissionMode.DEFAULT, List.of(), List.of(), List.of()), Map.of());
-        return new ToolContext(cache, new OrderKeeper(collector, guard));
+    public static ToolContext context(FileStateCache cache) {
+        return context(cache, new TodoStore(16_384));
+    }
+
+    public static ToolContext context(FileStateCache cache, TodoStore todos) {
+        var guard = new WorkspaceGuard(new AgentProperties(20, ".", true));
+        var collector = new OrdersCollector(
+                properties(PermissionMode.DEFAULT, List.of(), List.of(), List.of()), guard, Map.of());
+        return new ToolContext(cache, new OrdersKeeper(collector, guard), todos);
     }
 
     public record Setup(
             ToolContext context, PermissionEvaluator evaluator, OrderKeeper orders) {
     }
 
-    public static Setup setup(PermissionProperty p, WorkspaceGuard guard, FileStateGuard cache) {
+    public static Setup setup(PermissionProperties p, WorkspaceGuard guard, FileStateCache cache) {
+        return setup(p, guard, cache, new TodoStore(16_384));
+    }
+
+    public static Setup setup(
+            PermissionProperties p, WorkspaceGuard guard, FileStateCache cache, TodoStore todos) {
         // Свои временные файлы user/project/local: «запомнить» пишет в local, личные настройки не читаем и не трогаем.
         var collector = new OrderCollector(guard, p, temporaryOrdersFiles());
         var orders = new OrderKeeper(collector, guard);
         return new Setup(
-                new ToolContext(cache, orders),
+                new ToolContext(cache, orders, todos),
                 new PermissionEvaluator(orders),
                 orders);
     }
@@ -91,7 +100,18 @@ public class TestPermissionConfig {
             FileStateGuard cache,
             PermissionProperty p,
             PermissionPrompt prompt) {
-        var setup = setup(p, new WorkspaceGuard(new AgentProperty(20, ".", true)), cache);
+        return registry(tools, events, cache, new TodoStore(16_384), p, prompt);
+    }
+
+    /** Агенту и инструментам нужен один и тот же план — поэтому хранилище приходит снаружи. */
+    public static ToolRegistry registry(
+            List<Tool<?>> tools,
+            ApplicationEventPublisher events,
+            FileStateCache cache,
+            TodoStore todos,
+            PermissionProperties p,
+            PermissionPrompt prompt) {
+        var setup = setup(p, new WorkspaceGuard(new AgentProperties(20, ".", true)), cache, todos);
         return new ToolRegistry(
                 tools,
                 events,

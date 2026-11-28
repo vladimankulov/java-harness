@@ -9,6 +9,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.harness.tool.TodoItem;
+import com.harness.tool.TodoStatus;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.MessageType;
@@ -88,6 +90,30 @@ public class MachineViewPrinter {
         String label = part.displayName() + " ";
         String dots = ".".repeat(Math.max(1, LABEL_WIDTH - label.length()));
         print(Ansi.bold(Ansi.brightRed("> " + label + dots + " ARMED")));
+    }
+
+    /** План: заголовок со счётом и по строке на задачу. Задача в работе горит ярко. */
+    void showTodos(List<TodoItem> todos) {
+        if (todos.isEmpty()) {
+            print(Ansi.dim("> СПИСОК ЦЕЛЕЙ ПУСТ"));
+            return;
+        }
+        long done = todos.stream().filter(todo -> todo.status() == TodoStatus.COMPLETED).count();
+        List<String> block = new ArrayList<>();
+        block.add(Ansi.bold(Ansi.brightRed("> СПИСОК ЦЕЛЕЙ · %d из %d".formatted(done, todos.size()))));
+        for (TodoItem todo : todos) {
+            String line = "    %s %s".formatted(marker(todo.status()), todo.label());
+            block.add(todo.status() == TodoStatus.IN_PROGRESS ? Ansi.brightRed(line) : Ansi.dim(line));
+        }
+        print(block);
+    }
+
+    private static String marker(TodoStatus status) {
+        return switch (status) {
+            case PENDING -> "[ ]";
+            case IN_PROGRESS -> "[»]";
+            case COMPLETED -> "[x]";
+        };
     }
 
     /**
